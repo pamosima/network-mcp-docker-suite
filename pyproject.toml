@@ -1,0 +1,13 @@
+[project]
+name = "meraki-mcp-server"
+version = "0.1.0"
+description = "dependencies for this project"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "dotenv>=0.9.9",
+    "fastapi>=0.116.1",
+    "fastmcp>=2.10.6",
+    "httpx>=0.28.1",
+    "uvicorn>=0.35.0",
+]
