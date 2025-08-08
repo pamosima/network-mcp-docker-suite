@@ -1,4 +1,4 @@
-Meraki MCP Server
+# Meraki MCP Server
 
 A Model Context Protocol (MCP) server that exposes a curated subset of the Cisco Meraki Dashboard API to MCP-aware clients (e.g., Cursor, Claude Desktop). It provides role-based access to ensure safe and scoped operations.
 
