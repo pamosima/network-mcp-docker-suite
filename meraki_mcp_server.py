@@ -22,12 +22,54 @@ import httpx
 import os
 import json
 import jsonschema
+from pathlib import Path
 from fastmcp import FastMCP
 from fastmcp.server.openapi import RouteMap, MCPType
 from fastmcp.server.openapi import OpenAPITool
 
 # ---- Environment Variables ----
+# Load environment variables from .env file
+def load_dotenv_file(env_file: str = ".env") -> bool:
+    """Load environment variables from a .env file"""
+    env_path = Path(env_file)
+    
+    if not env_path.exists():
+        print(f"⚠️  .env file not found at {env_path.absolute()}")
+        print(f"📋 Using environment variables or defaults")
+        return False
+    
+    try:
+        with open(env_path, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                if '=' in line:
+                    key, value = line.split('=', 1)
+                    key = key.strip()
+                    value = value.strip().strip('"\'')
+                    os.environ[key] = value
+        
+        print(f"✅ Loaded environment from {env_file}")
+        return True
+    except Exception as e:
+        print(f"❌ Error loading .env file: {e}")
+        return False
+
+# Load .env file first
+load_dotenv_file()
+
+# Get API key from environment (now loaded from .env if available)
 api_key = os.getenv("MERAKI_KEY")
+
+# Validate required configuration
+if not api_key or api_key.startswith('your_actual_'):
+    print("❌ MERAKI_KEY not configured properly!")
+    print("📋 Please set your Meraki API key in .env file")
+    print("   Example: MERAKI_KEY=your_actual_api_key_here")
+    exit(1)
+
+print(f"✅ Meraki API key loaded: {api_key[:8]}...{api_key[-4:]}")
 
 
 # Create a custom HTTP client that cleans null values in API responses
@@ -130,7 +172,8 @@ class MerakiResponseFixingClient:
 # Create the base HTTP client for Meraki API
 base_client = httpx.AsyncClient(
     base_url="https://api.meraki.com/api/v1",
-    headers={"Authorization": f"Bearer {api_key}"}
+    headers={"X-Cisco-Meraki-API-Key": api_key, "Content-Type": "application/json"},
+    timeout=30,
 )
 
 # Wrap with our fixing client
@@ -233,10 +276,9 @@ except:
 try:
     import fastmcp
     import fastmcp.server
-    import fastmcp.core
     
     # Patch any validate functions we can find
-    for module in [fastmcp, fastmcp.server, fastmcp.core]:
+    for module in [fastmcp, fastmcp.server]:
         for attr_name in dir(module):
             attr = getattr(module, attr_name)
             if callable(attr) and 'validate' in attr_name.lower():
