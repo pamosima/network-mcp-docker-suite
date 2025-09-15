@@ -9,7 +9,7 @@
     },
     "args": [
       "--directory",
-      "/Users/kiskande/PycharmProjects/meraki-mcp-server",
+      "/home/user1/src/meraki-mcp-server",
       "run",
       "python",
       "meraki_mcp_server.py",
