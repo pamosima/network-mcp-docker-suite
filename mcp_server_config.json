@@ -1,19 +1,21 @@
 {
-  "Meraki-MCP-Server": {
-    "command": "uv",
-    "env": {
-      "MERAKI_KEY": "${MERAKI_KEY}",
-      "MERAKI_BASE_URL": "https://api.meraki.com/api/v1",
-      "MCP_ROLE": "noc",
-      "_comment": "Set MERAKI_KEY in your shell env. MCP_ROLE values: noc | sysadmin | all"
-    },
-    "args": [
-      "--directory",
-      "/home/user1/src/meraki-mcp-server",
-      "run",
-      "python",
-      "meraki_mcp_server.py",
-      "stdio"
-    ]
+  "mcpServers": {
+    "Meraki-MCP-Server": {
+      "command": "uv",
+      "env": {
+        "MERAKI_KEY": "${MERAKI_KEY}",
+        "MERAKI_BASE_URL": "https://api.meraki.com/api/v1",
+        "MCP_ROLE": "noc",
+        "_comment": "Set MERAKI_KEY in your shell env. MCP_ROLE values: noc | sysadmin | all"
+      },
+      "args": [
+        "--directory",
+        "/home/user1/src/meraki-mcp-server",
+        "run",
+        "python",
+        "meraki_mcp_server.py",
+        "stdio"
+      ]
+    }
   }
 }
