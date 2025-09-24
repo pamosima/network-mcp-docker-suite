@@ -1,6 +1,10 @@
-# 🐳 Meraki MCP Server - Docker Deployment
+# 🐳 Multi-MCP Server - Docker Deployment
 
-This guide explains how to deploy the Meraki MCP Server SSE version using Docker and Docker Compose.
+This project provides two MCP servers for LibreChat integration:
+- **Meraki MCP Server**: Cisco Meraki Dashboard API access
+- **NetBox MCP Server**: NetBox DCIM/IPAM functionality
+
+Both servers are deployed using Docker and Docker Compose with LibreChat network integration.
 
 ## 📋 Prerequisites
 
@@ -16,10 +20,10 @@ This guide explains how to deploy the Meraki MCP Server SSE version using Docker
 # Navigate to the project directory
 cd meraki-mcp-server
 
-# Copy the Docker environment template
-cp .env.example .env
+# Copy the environment template
+cp env.example .env
 
-# Edit with your Meraki API key
+# Edit with your API keys and configuration
 nano .env  # or use your preferred editor
 ```
 
@@ -28,48 +32,66 @@ nano .env  # or use your preferred editor
 Edit the `.env` file with your configuration:
 
 ```bash
-# Required: Your Meraki API key
-MERAKI_KEY=your_actual_api_key_here
-
-# Optional: Access control role
+# Meraki Configuration
+MERAKI_KEY=your_actual_meraki_api_key_here
 MCP_ROLE=noc
 
-# Optional: Custom port (default: 8000)
-MCP_PORT=8000
+# NetBox Configuration  
+NETBOX_URL=https://netbox.example.com
+NETBOX_TOKEN=your_netbox_token_here
+
+# Optional: Custom ports
+MERAKI_MCP_PORT=8000
+NETBOX_MCP_PORT=8001
 ```
 
-### 3. Start the Server
+### 3. Start Both Servers
 
 ```bash
-# Build and start in background
+# Build and start both servers in background
 docker-compose up -d
 
-# View logs
+# View logs for both servers
 docker-compose logs -f
+
+# View logs for specific server
+docker-compose logs -f meraki-mcp-server
+docker-compose logs -f netbox-mcp-server
 
 # Check status
 docker-compose ps
 ```
 
-### 4. Test the Deployment
+### 4. Test Both Deployments
 
 ```bash
-# Or open in browser
+# Test Meraki MCP Server
 open http://localhost:8000
+
+# Test NetBox MCP Server  
+open http://localhost:8001
 ```
 
 ## 🔧 Configuration Options
 
 ### Environment Variables
 
-The Docker deployment supports all the same environment variables as the native deployment:
+#### Meraki MCP Server Variables:
 
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
 | `MERAKI_KEY` | Meraki Dashboard API key | - | ✅ Yes |
 | `MCP_ROLE` | Access control role (noc/sysadmin/all) | `noc` | No |
-| `MCP_PORT` | Host port mapping | `8000` | No |
+| `MERAKI_MCP_PORT` | Host port mapping for Meraki server | `8000` | No |
 | `MERAKI_BASE_URL` | Meraki API base URL | `https://api.meraki.com/api/v1` | No |
+
+#### NetBox MCP Server Variables:
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `NETBOX_URL` | NetBox instance URL | - | ✅ Yes |
+| `NETBOX_TOKEN` | NetBox API token | - | ✅ Yes |
+| `NETBOX_MCP_PORT` | Host port mapping for NetBox server | `8001` | No |
 
 ### Access Control Roles
 
@@ -143,19 +165,26 @@ docker-compose logs meraki-mcp-server > meraki-server.log
 
 ### LibreChat Integration
 
-The server is configured to run on the `librechat_default` network and can be accessed by other containers at:
+Both servers are configured to run on the `librechat_default` network and can be accessed by other containers at:
 
-```
+```bash
+# Meraki MCP Server
 http://meraki-mcp-server:8000
+
+# NetBox MCP Server
+http://netbox-mcp-server:8001
 ```
 
 ### Local Development
 
-For local testing, the server is also accessible on the host at:
+For local testing, both servers are accessible on the host at:
 
 ```bash
-# Open test page
+# Meraki MCP Server
 open http://localhost:8000
+
+# NetBox MCP Server  
+open http://localhost:8001
 ```
 
 ## 🔒 Security Considerations

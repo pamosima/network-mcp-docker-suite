@@ -1,0 +1,11 @@
+[project]
+name = "netbox-mcp-server"
+version = "0.1.0"
+description = "NetBox MCP server for LibreChat integration"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastmcp>=2.10.6",
+    "requests>=2.31.0",
+    "uvicorn>=0.35.0",
+]

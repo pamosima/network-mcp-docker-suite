@@ -1,40 +1,71 @@
 services:
-  meraki-mcp-server:
+  librechat-mcp-servers:
     build:
-      context: .
+      context: ./meraki-mcp-server
       dockerfile: Dockerfile
     container_name: meraki-mcp-server
     restart: unless-stopped
     
-    # Environment variables
+    # Load environment variables from .env file
+    env_file:
+      - ./meraki-mcp-server/.env
+    
+    # Environment variables (override any from .env file if needed)
     environment:
-      # Required: Meraki API key (set in .env file or pass via environment)
-      - MERAKI_KEY=${MERAKI_KEY}
-      
-      # Optional: Role-based access control
-      - MCP_ROLE=${MCP_ROLE:-noc}
-      
-      # SSE Server configuration
-      - MCP_HOST=0.0.0.0  # Accept connections from any host in container
-      - MCP_PORT=8000
-      
-      # API configuration
-      - MERAKI_BASE_URL=${MERAKI_BASE_URL:-https://api.meraki.com/api/v1}
+      - MCP_HOST=0.0.0.0
       
     # Port mapping: host:container
     ports:
-      - "${MCP_PORT:-8000}:8000"
+      - "8000:8000"
     
     # Volume mounts (optional)
     volumes:
       # Mount configuration files (read-only)
-      - ./openapi:/app/openapi:ro
+      - ./meraki-mcp-server/openapi:/app/openapi:ro
+    
+    # Network configuration
+    networks:
+      - librechat_default
+    
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+    
+    # Resource limits (optional, adjust as needed)
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  netbox-mcp-server:
+    build:
+      context: ./netbox-mcp-server
+      dockerfile: Dockerfile
+    container_name: netbox-mcp-server
+    restart: unless-stopped
+    
+    # Load environment variables from .env file
+    env_file:
+      - ./netbox-mcp-server/.env
+    
+    # Environment variables (override any from .env file if needed)
+    environment:
+      - MCP_HOST=0.0.0.0
       
-      # Mount logs directory (if you want persistent logs)
-      # - ./logs:/app/logs
-      
-      # Mount custom configuration (optional)
-      # - ./config:/app/config:ro
+    # Port mapping: host:container
+    ports:
+      - "8001:8001"
     
     # Network configuration
     networks:
