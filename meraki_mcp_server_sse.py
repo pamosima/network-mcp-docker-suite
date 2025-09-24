@@ -1,19 +1,25 @@
 """
-Meraki MCP Server
+Meraki MCP Server (SSE Version)
 
 A Model Context Protocol (MCP) server that provides secure, role-based access to the Cisco Meraki Dashboard API.
 This server allows AI assistants and other MCP clients to interact with Meraki networks while enforcing
 proper access controls based on user roles.
+
+This version uses Server-Sent Events (SSE) instead of stdio for communication.
 
 Features:
 - Role-based access control (NOC, SysAdmin, All)
 - Automatic handling of Meraki API null values
 - OpenAPI-based tool generation
 - Secure API key authentication
+- SSE-based communication
+- Web interface support
 
 Environment Variables:
 - MERAKI_KEY: Required. Your Meraki Dashboard API key
 - MCP_ROLE: Optional. Role for access control (noc|sysadmin|all). Defaults to 'noc'
+- MCP_PORT: Optional. Port for SSE server. Defaults to 8000
+- MCP_HOST: Optional. Host for SSE server. Defaults to localhost
 
 Author: Kareem Iskander
 """
@@ -62,6 +68,10 @@ load_dotenv_file()
 # Get API key from environment (now loaded from .env if available)
 api_key = os.getenv("MERAKI_KEY")
 
+# Get SSE server configuration
+sse_port = int(os.getenv("MCP_PORT", "8000"))
+sse_host = os.getenv("MCP_HOST", "localhost")
+
 # Validate required configuration
 if not api_key or api_key.startswith('your_actual_'):
     print("❌ MERAKI_KEY not configured properly!")
@@ -70,6 +80,7 @@ if not api_key or api_key.startswith('your_actual_'):
     exit(1)
 
 print(f"✅ Meraki API key loaded: {api_key[:8]}...{api_key[-4:]}")
+print(f"🌐 SSE Server will run on: http://{sse_host}:{sse_port}")
 
 
 # Create a custom HTTP client that cleans null values in API responses
@@ -397,11 +408,21 @@ except Exception as e:
 
 # ---- Server Startup ----
 if __name__ == "__main__":
-    print(f"Meraki MCP Server starting...")
-    print(f"API Base URL: {client.base_url}")
-    print(f"Role: {role.upper()}")
-    print(f"Available endpoints: {len([r for r in selected_routes if r.mcp_type == MCPType.TOOL])}")
-    print(f"Server ready for MCP client connections.")
+    print(f"🚀 Meraki MCP Server (SSE Mode) starting...")
+    print(f"🔗 API Base URL: {client.base_url}")
+    print(f"👤 Role: {role.upper()}")
+    print(f"🛠️  Available endpoints: {len([r for r in selected_routes if r.mcp_type == MCPType.TOOL])}")
+    print(f"🌐 Server starting on: http://{sse_host}:{sse_port}")
+    print(f"📡 SSE endpoint: http://{sse_host}:{sse_port}/sse")
+    print(f"✅ Server ready for MCP client connections via SSE.")
     
-    # Start the MCP server
-    mcp.run()
+    # Start the MCP server in SSE mode
+    try:
+        mcp.run(transport="sse", host=sse_host, port=sse_port)
+    except Exception as e:
+        print(f"❌ Failed to start SSE server: {e}")
+        print(f"💡 Trying alternative SSE startup method...")
+        # Alternative method if the above doesn't work
+        import uvicorn
+        app = mcp.create_app()
+        uvicorn.run(app, host=sse_host, port=sse_port, log_level="info")

@@ -1,129 +1,341 @@
-# Meraki MCP Server
+# 🐳 Meraki MCP Server - Docker Deployment
 
-A Model Context Protocol (MCP) server that exposes a curated subset of the Cisco Meraki Dashboard API to MCP-aware clients (e.g., Cursor, Claude Desktop). It provides role-based access to ensure safe and scoped operations.
+This guide explains how to deploy the Meraki MCP Server SSE version using Docker and Docker Compose.
 
-## Features
-- Role-based access control (noc | sysadmin | all)
-- OpenAPI-driven tool generation (using the bundled spec)
-- Global schema validation bypass to tolerate Meraki `null` values (prevents "None is not of type 'string'")
-- Simple configuration via environment variables
+## 📋 Prerequisites
 
-## Requirements
-- Python 3.10+
-- A Meraki Dashboard API key with appropriate org access
-- Optional: `uv` for reproducible Python environments (recommended)
+- Docker Engine 20.10+
+- Docker Compose 2.0+
+- Valid Meraki Dashboard API key
 
-## Install
+## 🚀 Quick Start
 
-### Option A: Using uv (recommended)
+### 1. Clone and Setup
+
 ```bash
-# 1) Install uv if needed
-curl -LsSf https://astral.sh/uv/install.sh | sh
+# Navigate to the project directory
+cd meraki-mcp-server
 
-# 2) From project root
-cd /path/to/your/meraki-mcp-server
+# Copy the Docker environment template
+cp .env.example .env
 
-# 3) Create and sync the environment based on pyproject.toml / uv.lock
-uv sync
+# Edit with your Meraki API key
+nano .env  # or use your preferred editor
 ```
 
-### Option B: Using pip (fallback)
+### 2. Configure Environment
+
+Edit the `.env` file with your configuration:
+
 ```bash
-# 1) Create a virtual environment
-python3 -m venv .venv
-source .venv/bin/activate
+# Required: Your Meraki API key
+MERAKI_KEY=your_actual_api_key_here
 
-# 2) Install dependencies
-pip install fastmcp httpx jsonschema
+# Optional: Access control role
+MCP_ROLE=noc
+
+# Optional: Custom port (default: 8000)
+MCP_PORT=8000
 ```
 
-## Configure
-Set environment variables (you can export them in your shell or supply via your MCP client config):
+### 3. Start the Server
 
-- `MERAKI_KEY` (required): Your Meraki Dashboard API key
-- `MCP_ROLE` (optional): One of `noc`, `sysadmin`, `all` (defaults to `noc`)
-- `MERAKI_BASE_URL` (optional): Defaults to `https://api.meraki.com/api/v1`
-
-Example (macOS/Linux):
 ```bash
-export MERAKI_KEY="<your-meraki-api-key>"
-export MCP_ROLE="noc"     # or sysadmin | all
+# Build and start in background
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Check status
+docker-compose ps
 ```
 
-## Quick Run (smoke test)
-You can quickly validate the server starts locally (even outside an MCP client):
+### 4. Test the Deployment
+
 ```bash
-# Using uv
-uv run python meraki_mcp_server.py
-
-# Or with plain Python (ensure venv is active)
-python3 meraki_mcp_server.py
-```
-This will start the MCP server process. Typically, you run this via an MCP client over stdio.
-
-## MCP Client Configuration
-Below is an example `mcp_server_config.json` entry you can adapt in your MCP client (e.g., Cursor, Claude Desktop). Ensure you replace the directory path with your actual project location.
-
-```json
-{
-  "Meraki-MCP-Server": {
-    "command": "uv",
-    "env": {
-      "MERAKI_KEY": "${MERAKI_KEY}",
-      "MERAKI_BASE_URL": "https://api.meraki.com/api/v1",
-      "MCP_ROLE": "noc",
-      "_comment": "Set MERAKI_KEY in your shell env. MCP_ROLE values: noc | sysadmin | all"
-    },
-    "args": [
-      "--directory",
-      "/path/to/yourMCPdirector/meraki-mcp-server",
-      "run",
-      "python",
-      "meraki_mcp_server.py",
-      "stdio"
-    ]
-  }
-}
+# Or open in browser
+open http://localhost:8000
 ```
 
-Notes:
-- The `${MERAKI_KEY}` placeholder means your MCP client will inherit the key from your shell environment.
-- `stdio` at the end ensures the server communicates over standard I/O as MCP expects.
-- If you do not use `uv`, replace `command` and `args` accordingly to invoke your Python environment.
+## 🔧 Configuration Options
 
-## Roles and Allowed Endpoints
-The server uses route maps to constrain access:
+### Environment Variables
 
-- `noc` (default):
-  - GET `/organizations`
-  - GET `/organizations/{orgId}/networks`
-  - GET `/organizations/{orgId}/devices`
-  - GET `/organizations/{orgId}/firmware/upgrades`
-  - GET `/organizations/{orgId}/licenses/overview`
-  - PUT `/networks/{networkId}/firmwareUpgrades`
-  - All other endpoints are blocked
+The Docker deployment supports all the same environment variables as the native deployment:
 
-- `sysadmin`:
-  - Same read endpoints as `noc`, but with PUT operations blocked (read-only)
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `MERAKI_KEY` | Meraki Dashboard API key | - | ✅ Yes |
+| `MCP_ROLE` | Access control role (noc/sysadmin/all) | `noc` | No |
+| `MCP_PORT` | Host port mapping | `8000` | No |
+| `MERAKI_BASE_URL` | Meraki API base URL | `https://api.meraki.com/api/v1` | No |
 
-- `all`:
-  - Firehose mode. All endpoints allowed (use with caution)
+### Access Control Roles
 
-You can switch roles by setting `MCP_ROLE` before launching the server.
+- **`noc`**: Network Operations Center - monitoring + firmware upgrades
+- **`sysadmin`**: System Administrator - read-only access
+- **`all`**: Full API access (firehose mode)
 
-## Validation Behavior
-Meraki may return `null` for some fields the official schema marks as strings. To avoid frequent validation errors (e.g., `None is not of type 'string'`), this server disables JSON schema output validation globally. This keeps tools responsive and avoids brittle schema mismatches.
+## 📊 Docker Commands
 
-If you prefer strict validation, remove the monkey patch in `meraki_mcp_server.py` and update the OpenAPI spec to mark nullable string fields explicitly.
+### Basic Operations
 
-## Security
-- Never commit your API key. Use environment variables.
-- Limit the server’s accessible endpoints by using the appropriate role.
-- Consider running this behind a process supervisor and restricting filesystem/network access where appropriate.
+```bash
+# Start services
+docker-compose up -d
 
-## Troubleshooting
-- Import errors (e.g., RouteType vs MCPType): This project is pinned to the FastMCP API compatible with `MCPType`. If your local FastMCP differs, install the version specified in `pyproject.toml`/`uv.lock`.
-- Validation errors: By design, validation is disabled to tolerate Meraki `null`s. If you still see validation errors, ensure you’re running the current `meraki_mcp_server.py`.
+# Stop services
+docker-compose down
 
-## License
-MIT (or your preferred license)
+# Restart services
+docker-compose restart
+
+# View logs
+docker-compose logs meraki-mcp-server
+
+# Follow logs in real-time
+docker-compose logs -f meraki-mcp-server
+
+# Check service status
+docker-compose ps
+
+# Check resource usage
+docker stats meraki-mcp-server
+```
+
+### Development Operations
+
+```bash
+# Rebuild image after code changes
+docker-compose build
+
+# Rebuild and restart
+docker-compose up -d --build
+
+# Run without cache
+docker-compose build --no-cache
+
+# Shell into running container
+docker-compose exec meraki-mcp-server /bin/bash
+
+# Run one-off commands
+docker-compose run --rm meraki-mcp-server python --version
+```
+
+### Maintenance Operations
+
+```bash
+# Update base images
+docker-compose pull
+
+# Clean up unused images
+docker system prune
+
+# View container resource usage
+docker stats
+
+# Export logs
+docker-compose logs meraki-mcp-server > meraki-server.log
+```
+
+## 🌐 Network Access
+
+### LibreChat Integration
+
+The server is configured to run on the `librechat_default` network and can be accessed by other containers at:
+
+```
+http://meraki-mcp-server:8000
+```
+
+### Local Development
+
+For local testing, the server is also accessible on the host at:
+
+```bash
+# Open test page
+open http://localhost:8000
+```
+
+## 🔒 Security Considerations
+
+### Container Security
+
+- ✅ Runs as non-root user
+- ✅ Security options enabled (`no-new-privileges`)
+- ✅ Resource limits configured
+- ✅ Network isolation via Docker networks
+
+### Network Security
+
+- 🔒 API key never stored in image
+- 🔒 Environment variable isolation
+- 🔒 Network isolation via Docker networks
+
+### Production Security
+
+For production deployments:
+
+1. **Use secrets management**:
+   ```bash
+   # Use Docker secrets instead of environment variables
+   echo "your_api_key" | docker secret create meraki_key -
+   ```
+
+2. **Firewall configuration**:
+   ```bash
+   # Only allow specific IPs
+   iptables -A INPUT -p tcp --dport 8000 -s trusted_ip -j ACCEPT
+   ```
+
+## 📊 Monitoring and Logging
+
+### Logging Configuration
+
+Logs are configured with rotation to prevent disk space issues:
+
+```yaml
+logging:
+  driver: "json-file"
+  options:
+    max-size: "10m"  # Maximum log file size
+    max-file: "3"    # Number of rotated files
+```
+
+### External Monitoring
+
+For production monitoring, consider integrating with:
+
+- **Prometheus**: Metrics collection
+- **Grafana**: Visualization
+- **ELK Stack**: Log aggregation
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### Container Won't Start
+
+```bash
+# Check logs for errors
+docker-compose logs meraki-mcp-server
+
+# Common causes:
+# 1. Missing MERAKI_KEY
+# 2. Port 8000 already in use
+# 3. Invalid API key
+```
+
+#### Can't Access Server
+
+```bash
+# Check if container is running
+docker-compose ps
+
+# Check port mapping
+docker port meraki-mcp-server
+```
+
+#### Permission Issues
+
+```bash
+# Check file permissions
+ls -la openapi/
+
+# Fix permissions if needed
+chmod 644 openapi/spec3.json
+```
+
+### Debug Mode
+
+Enable debug logging:
+
+```bash
+# Add to .env file
+LOG_LEVEL=DEBUG
+
+# Restart container
+docker-compose restart
+```
+
+### Performance Issues
+
+Monitor resource usage:
+
+```bash
+# Check container resources
+docker stats meraki-mcp-server
+
+# Adjust limits in docker-compose.yml
+```
+
+## 🔄 Updates and Maintenance
+
+### Updating the Application
+
+```bash
+# Pull latest code
+git pull
+
+# Rebuild and restart
+docker-compose up -d --build
+
+# Clean up old images
+docker image prune
+```
+
+### Backup and Recovery
+
+```bash
+# Backup configuration
+cp .env .env.backup
+cp docker-compose.yml docker-compose.yml.backup
+
+# Export container (if needed)
+docker export meraki-mcp-server > meraki-backup.tar
+```
+
+## 🏗️ Production Deployment
+
+### Recommended Production Setup
+
+1. **Use Docker Swarm or Kubernetes** for orchestration
+2. **Set up monitoring** and alerting
+3. **Configure log aggregation**
+4. **Implement backup strategies**
+5. **Use secrets management**
+
+### Scaling
+
+For high availability:
+
+```bash
+# Scale to multiple replicas (requires load balancer)
+docker-compose up -d --scale meraki-mcp-server=3
+```
+
+## 📈 Performance Optimization
+
+### Resource Tuning
+
+Adjust resource limits based on your needs:
+
+```yaml
+deploy:
+  resources:
+    limits:
+      memory: 1G      # Increase for large deployments
+      cpus: '1.0'     # Increase for high load
+    reservations:
+      memory: 512M
+      cpus: '0.5'
+```
+
+## 🤝 Support
+
+If you encounter issues:
+
+1. Check the logs: `docker-compose logs meraki-mcp-server`
+2. Verify configuration: Review your `.env` file
+3. Check resources: `docker stats`
