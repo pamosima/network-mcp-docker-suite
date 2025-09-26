@@ -109,36 +109,35 @@ docker network create -d bridge demo
 
 #### 4. Deploy the Servers
 
-You can deploy specific servers using Docker Compose profiles:
+**Default behavior** - Deploy all servers:
 
 ```bash
-# Deploy ALL servers (default)
-docker-compose --profile all up -d
+# Deploy ALL servers (default behavior)
+docker-compose up -d
 
-# Deploy ONLY Meraki MCP server
-docker-compose --profile meraki up -d
-
-# Deploy ONLY NetBox MCP server
-docker-compose --profile netbox up -d
-
-# Deploy ONLY Catalyst Center MCP server
-docker-compose --profile catc up -d
-# or
-docker-compose --profile catalyst up -d
-
-# Deploy multiple specific servers
-docker-compose --profile meraki --profile netbox up -d
-
-# View logs for running servers
+# View logs for all servers
 docker-compose logs -f
 
-# View logs for specific server
-docker-compose logs -f meraki-mcp-server
-docker-compose logs -f netbox-mcp-server
-docker-compose logs -f catc-mcp-server
+# Check status of all servers
+docker-compose ps
+```
+
+**Selective deployment** - Use the convenience script:
+
+```bash
+# Deploy specific servers using convenience script
+./deploy.sh start meraki        # Deploy only Meraki
+./deploy.sh start netbox        # Deploy only NetBox  
+./deploy.sh start catc          # Deploy only Catalyst Center
+./deploy.sh start management    # Deploy Meraki + Catalyst Center
+./deploy.sh start docs          # Deploy NetBox + Catalyst Center
+
+# View logs for specific deployments
+./deploy.sh logs meraki
+./deploy.sh logs management
 
 # Check status
-docker-compose ps
+./deploy.sh status all
 ```
 
 #### 5. Verify Deployment
@@ -154,9 +153,9 @@ curl http://localhost:8001/health
 curl http://localhost:8002/health
 ```
 
-## 🎯 Deployment Profiles
+## 🎯 Deployment Options
 
-This project uses Docker Compose profiles to enable selective server deployment:
+By default, `docker-compose up -d` will start all MCP servers. For selective deployment, use the included convenience script:
 
 ### Available Profiles
 
@@ -169,23 +168,23 @@ This project uses Docker Compose profiles to enable selective server deployment:
 | `management` | Deploy network management servers | Meraki + Catalyst Center |
 | `docs` | Deploy documentation-focused servers | NetBox + Catalyst Center |
 
-### Profile Usage Examples
+### Deployment Examples
 
 ```bash
-# Common deployment scenarios
-docker-compose --profile all up -d          # Full deployment
-docker-compose --profile meraki up -d       # Cloud-only (Meraki)
-docker-compose --profile netbox up -d       # Documentation-only (NetBox)
-docker-compose --profile catc up -d         # Enterprise management (Catalyst Center)
+# Default Docker Compose behavior
+docker-compose up -d                         # Start all servers
+docker-compose down                          # Stop all servers
 
-# Mixed deployments
-docker-compose --profile meraki --profile netbox up -d    # Management + Documentation
-docker-compose --profile meraki --profile catc up -d      # Network Management
-docker-compose --profile netbox --profile catc up -d      # Documentation + Enterprise
+# Selective deployment using convenience script
+./deploy.sh start all                        # Start all servers
+./deploy.sh start meraki                     # Start only Meraki
+./deploy.sh start management                 # Start Meraki + Catalyst Center
+./deploy.sh start docs                       # Start NetBox + Catalyst Center
 
-# Stop specific profiles
-docker-compose --profile meraki down        # Stop only Meraki server
-docker-compose --profile all down           # Stop all servers
+# Management operations
+./deploy.sh stop meraki                      # Stop only Meraki server
+./deploy.sh restart management               # Restart management servers
+./deploy.sh logs docs                        # View logs for documentation servers
 ```
 
 ### 🚀 Convenience Script (Recommended)
@@ -263,30 +262,31 @@ All MCP servers provide standardized endpoints for integration:
 ### Basic Operations
 
 ```bash
-# Start services (requires profile specification)
-docker-compose --profile all up -d              # All servers
-docker-compose --profile meraki up -d           # Meraki only
+# Start services (all servers by default)
+docker-compose up -d                             # All servers
+docker-compose up -d meraki-mcp-servers          # Meraki only
+docker-compose up -d netbox-mcp-server           # NetBox only
+docker-compose up -d catc-mcp-server             # Catalyst Center only
 
 # Stop services
-docker-compose --profile all down               # All servers
-docker-compose --profile meraki down            # Meraki only
-docker-compose down                              # All running containers
+docker-compose down                              # All servers
+docker-compose stop meraki-mcp-servers          # Meraki only
+docker-compose stop netbox-mcp-server           # NetBox only
 
 # Restart services
-docker-compose --profile all restart            # All servers
-docker-compose restart meraki-mcp-server        # Specific server
+docker-compose restart                           # All servers
+docker-compose restart meraki-mcp-servers       # Specific server
 
 # View logs
-docker-compose logs meraki-mcp-server           # Specific server
+docker-compose logs meraki-mcp-servers          # Specific server
 docker-compose logs                              # All running servers
 
 # Follow logs in real-time
-docker-compose logs -f meraki-mcp-server        # Specific server
+docker-compose logs -f meraki-mcp-servers       # Specific server
 docker-compose logs -f                           # All running servers
 
 # Check service status
 docker-compose ps                                # All containers
-docker-compose --profile meraki ps              # Profile-specific
 
 # Check resource usage
 docker stats meraki-mcp-server                  # Specific server
@@ -297,25 +297,25 @@ docker stats                                     # All running containers
 
 ```bash
 # Rebuild image after code changes
-docker-compose --profile all build              # All servers
-docker-compose build meraki-mcp-server          # Specific server
+docker-compose build                            # All servers
+docker-compose build meraki-mcp-servers         # Specific server
 
 # Rebuild and restart
-docker-compose --profile all up -d --build      # All servers
-docker-compose --profile meraki up -d --build   # Meraki only
+docker-compose up -d --build                    # All servers
+docker-compose up -d --build meraki-mcp-servers # Meraki only
 
 # Run without cache
-docker-compose --profile all build --no-cache   # All servers
-docker-compose build --no-cache meraki-mcp-server  # Specific server
+docker-compose build --no-cache                 # All servers
+docker-compose build --no-cache meraki-mcp-servers # Specific server
 
 # Shell into running container
-docker-compose exec meraki-mcp-server /bin/bash
+docker-compose exec meraki-mcp-servers /bin/bash
 docker-compose exec netbox-mcp-server /bin/bash
 docker-compose exec catc-mcp-server /bin/bash
 
 # Run one-off commands
-docker-compose run --rm meraki-mcp-server python --version
-docker-compose --profile netbox run --rm netbox-mcp-server python --version
+docker-compose run --rm meraki-mcp-servers python --version
+docker-compose run --rm netbox-mcp-server python --version
 ```
 
 ### Maintenance Operations

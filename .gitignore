@@ -3,6 +3,9 @@
 .env.local
 .env.production
 
+# Docker override files - user-specific configuration
+docker-compose.override.yml
+
 # Python
 __pycache__/
 *.pyc

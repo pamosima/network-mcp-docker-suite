@@ -1,6 +1,5 @@
 services:
   meraki-mcp-servers:
-    profiles: ["meraki", "all"]
     build:
       context: ./meraki-mcp-server
       dockerfile: Dockerfile
@@ -46,7 +45,6 @@ services:
         max-file: "3"
 
   netbox-mcp-server:
-    profiles: ["netbox", "all"]
     build:
       context: ./netbox-mcp-server
       dockerfile: Dockerfile
@@ -87,7 +85,6 @@ services:
         max-file: "3"
 
   catc-mcp-server:
-    profiles: ["catc", "catalyst", "all"]
     build:
       context: ./catc-mcp-server
       dockerfile: Dockerfile

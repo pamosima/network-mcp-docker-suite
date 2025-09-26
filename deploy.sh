@@ -40,27 +40,27 @@ show_usage() {
     echo ""
 }
 
-# Function to build profile arguments
-build_profile_args() {
+# Function to build service arguments
+build_service_args() {
     local profile=$1
     case $profile in
         "all")
-            echo "--profile all"
+            echo "meraki-mcp-servers netbox-mcp-server catc-mcp-server"
             ;;
         "meraki")
-            echo "--profile meraki"
+            echo "meraki-mcp-servers"
             ;;
         "netbox")
-            echo "--profile netbox"
+            echo "netbox-mcp-server"
             ;;
         "catc"|"catalyst")
-            echo "--profile catc"
+            echo "catc-mcp-server"
             ;;
         "management")
-            echo "--profile meraki --profile catc"
+            echo "meraki-mcp-servers catc-mcp-server"
             ;;
         "docs"|"documentation")
-            echo "--profile netbox --profile catc"
+            echo "netbox-mcp-server catc-mcp-server"
             ;;
         *)
             echo -e "${RED}Error: Unknown profile '$profile'${NC}"
@@ -86,38 +86,54 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
-# Build profile arguments
-PROFILE_ARGS=$(build_profile_args $PROFILE)
+# Build service arguments
+SERVICE_ARGS=$(build_service_args $PROFILE)
 
 # Execute commands
 case $COMMAND in
     "start")
         echo -e "${GREEN}Starting MCP servers with profile: $PROFILE${NC}"
-        docker-compose $PROFILE_ARGS up -d
+        if [ "$PROFILE" = "all" ]; then
+            docker-compose up -d
+        else
+            docker-compose up -d $SERVICE_ARGS
+        fi
         echo -e "${GREEN}Servers started successfully!${NC}"
         echo -e "${YELLOW}Use '$0 status $PROFILE' to check status${NC}"
         ;;
     "stop")
         echo -e "${YELLOW}Stopping MCP servers with profile: $PROFILE${NC}"
-        docker-compose $PROFILE_ARGS down
+        if [ "$PROFILE" = "all" ]; then
+            docker-compose down
+        else
+            docker-compose stop $SERVICE_ARGS
+        fi
         echo -e "${GREEN}Servers stopped successfully!${NC}"
         ;;
     "restart")
         echo -e "${YELLOW}Restarting MCP servers with profile: $PROFILE${NC}"
-        docker-compose $PROFILE_ARGS restart
+        docker-compose restart $SERVICE_ARGS
         echo -e "${GREEN}Servers restarted successfully!${NC}"
         ;;
     "status")
         echo -e "${BLUE}Status for profile: $PROFILE${NC}"
-        docker-compose ps
+        docker-compose ps $SERVICE_ARGS
         ;;
     "logs")
         echo -e "${BLUE}Logs for profile: $PROFILE${NC}"
-        docker-compose logs -f
+        if [ "$PROFILE" = "all" ]; then
+            docker-compose logs -f
+        else
+            docker-compose logs -f $SERVICE_ARGS
+        fi
         ;;
     "build")
         echo -e "${YELLOW}Building images for profile: $PROFILE${NC}"
-        docker-compose $PROFILE_ARGS build
+        if [ "$PROFILE" = "all" ]; then
+            docker-compose build
+        else
+            docker-compose build $SERVICE_ARGS
+        fi
         echo -e "${GREEN}Images built successfully!${NC}"
         ;;
     "help"|"-h"|"--help")
