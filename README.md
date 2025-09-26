@@ -89,6 +89,9 @@ cp docker-compose.override.yml.example docker-compose.override.yml
 
 # Edit network settings if needed
 nano docker-compose.override.yml
+
+# Create the custom network (if using external network like 'demo')
+docker network create -d bridge demo
 ```
 
 #### 4. Deploy the Servers
