@@ -338,27 +338,99 @@ docker-compose logs meraki-mcp-server > meraki-server.log
 
 ### LibreChat Integration
 
-Both servers are configured to run on the `librechat_default` network and can be accessed by other containers at:
+For seamless integration with LibreChat, all MCP servers can run on the same Docker network using Docker Compose override files.
 
-```bash
-# Meraki MCP Server
-http://meraki-mcp-server:8000
+#### MCP Servers Network Configuration
 
-# NetBox MCP Server
-http://netbox-mcp-server:8001
+The MCP servers can be configured to use a custom network using `docker-compose.override.yml`:
+
+```yaml
+# docker-compose.override.yml for MCP servers
+services:
+  meraki-mcp-servers:
+    networks: ['demo']
+  netbox-mcp-server:
+    networks: ['demo']
+  catc-mcp-server:
+    networks: ['demo']
+networks:
+  demo:
+    external: true
 ```
 
-### Local Development
+#### LibreChat Network Configuration
 
-For local testing, both servers are accessible on the host at:
+Configure LibreChat to use the same network by creating a `docker-compose.override.yml` in your LibreChat project:
+
+```yaml
+# docker-compose.override.yml for LibreChat
+services:
+  api:
+    networks: ['demo']
+  mongodb:
+    networks: ['demo']
+  meilisearch:
+    networks: ['demo']
+  vectordb:
+    networks: ['demo']
+  rag_api:
+    networks: ['demo']
+networks:
+  demo:
+    external: true
+```
+
+#### Setup Steps for LibreChat Integration
+
+1. **Create the shared network:**
+   ```bash
+   docker network create -d bridge demo
+   ```
+
+2. **Deploy MCP servers with custom network:**
+   ```bash
+   # Copy network configuration
+   cp docker-compose.override.yml.example docker-compose.override.yml
+   
+   # Start MCP servers on custom network
+   ./deploy.sh start all
+   ```
+
+3. **Configure LibreChat** with the override file above and deploy it
+
+4. **Access MCP servers from LibreChat containers:**
+   ```bash
+   # Meraki MCP Server
+   http://meraki-mcp-server:8000
+   
+   # NetBox MCP Server
+   http://netbox-mcp-server:8001
+   
+   # Catalyst Center MCP Server
+   http://catc-mcp-server:8002
+   ```
+
+### Local Development Access
+
+For local testing and development, all servers are accessible on the host at:
 
 ```bash
 # Meraki MCP Server
-open http://localhost:8000
+curl http://localhost:8000/health
 
 # NetBox MCP Server  
-open http://localhost:8001
+curl http://localhost:8001/health
+
+# Catalyst Center MCP Server
+curl http://localhost:8002/health
 ```
+
+### Network Isolation Benefits
+
+- **Security**: Network isolation between different environments
+- **Service Discovery**: Containers can communicate using service names
+- **Scalability**: Easy to add more services to the same network
+- **Flexibility**: Different networks for development, staging, and production
 
 ## 🔒 Security Considerations
 
