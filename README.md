@@ -1,51 +1,97 @@
 # 🐳 Multi-MCP Server - Docker Deployment
 
-This project provides two MCP servers for LibreChat integration:
-- **Meraki MCP Server**: Cisco Meraki Dashboard API access
-- **NetBox MCP Server**: NetBox DCIM/IPAM functionality
+Multi-MCP Server implementation providing Cisco Meraki Dashboard API and NetBox DCIM/IPAM functionality through Model Context Protocol (MCP) servers. This project enables seamless integration with LibreChat and other MCP-compatible applications for network management and infrastructure documentation.
 
-Both servers are deployed using Docker and Docker Compose with LibreChat network integration.
+## 📋 Description
 
-## 📋 Prerequisites
+This repository contains two production-ready MCP servers designed for Cisco DevNet community use:
+
+- **Meraki MCP Server**: Provides comprehensive access to Cisco Meraki Dashboard API functionality including device management, network monitoring, and configuration operations
+- **NetBox MCP Server**: Enables complete NetBox DCIM/IPAM capabilities for infrastructure documentation, IP address management, and device lifecycle tracking
+
+Both servers are containerized using Docker and designed for easy deployment with LibreChat network integration, supporting role-based access control and production-grade security features.
+
+## 🎯 Use Case
+
+Network administrators and DevOps teams need streamlined access to network infrastructure data and management capabilities. This solution provides:
+
+- **Unified Network Management**: Single interface for both Meraki cloud and on-premises NetBox systems
+- **Automated Documentation**: Real-time synchronization between network devices and documentation systems  
+- **Role-Based Operations**: Granular access control for different operational teams (NOC, SysAdmin, etc.)
+- **Integration Ready**: MCP protocol compatibility enables integration with AI assistants and automation platforms
+
+## 🧩 Solution Components
+
+### 🏢 Architecture
+- **MCP Protocol Implementation**: Standards-based Model Context Protocol for AI integration
+- **Docker Containerization**: Production-ready containers with security hardening
+- **Network Isolation**: Secure communication via Docker networks
+- **Role-Based Access**: Configurable permission levels for different user types
+
+## 🚀 Installation
+
+### 📋 Prerequisites
 
 - Docker Engine 20.10+
-- Docker Compose 2.0+
+- Docker Compose 2.0+  
 - Valid Meraki Dashboard API key
+- NetBox instance with API access (for NetBox MCP Server)
 
-## 🚀 Quick Start
+### 🚀 Quick Start
 
-### 1. Clone and Setup
+#### 1. Clone the Repository
 
 ```bash
-# Navigate to the project directory
-cd meraki-mcp-server
-
-# Copy the environment template
-cp env.example .env
-
-# Edit with your API keys and configuration
-nano .env  # or use your preferred editor
+# Clone this repository
+git clone https://github.com/your-username/devnet-mcp-servers.git
+cd devnet-mcp-servers
 ```
 
-### 2. Configure Environment
+#### 2. Configure Environment Variables
 
-Edit the `.env` file with your configuration:
+Copy the environment templates and configure your API keys:
 
 ```bash
-# Meraki Configuration
+# Copy Meraki environment template
+cp meraki-mcp-server/.env.example meraki-mcp-server/.env
+
+# Copy NetBox environment template  
+cp netbox-mcp-server/.env.example netbox-mcp-server/.env
+
+# Edit the Meraki configuration
+nano meraki-mcp-server/.env
+
+# Edit the NetBox configuration
+nano netbox-mcp-server/.env
+```
+
+Configure your actual API keys in the respective `.env` files:
+
+**meraki-mcp-server/.env:**
+```bash
 MERAKI_KEY=your_actual_meraki_api_key_here
 MCP_ROLE=noc
-
-# NetBox Configuration  
-NETBOX_URL=https://netbox.example.com
-NETBOX_TOKEN=your_netbox_token_here
-
-# Optional: Custom ports
-MERAKI_MCP_PORT=8000
-NETBOX_MCP_PORT=8001
 ```
 
-### 3. Start Both Servers
+**netbox-mcp-server/.env:**
+```bash
+NETBOX_URL=https://netbox.example.com
+NETBOX_TOKEN=your_netbox_token_here
+```
+
+#### 3. Optional: Configure Custom Networks
+
+If you need custom network settings (e.g., for LibreChat integration), copy and modify the network override file:
+
+```bash
+# Copy the network configuration template (optional)
+cp docker-compose.override.yml.example docker-compose.override.yml
+
+# Edit network settings if needed
+nano docker-compose.override.yml
+```
+
+#### 4. Deploy the Servers
 
 ```bash
 # Build and start both servers in background
@@ -62,17 +108,26 @@ docker-compose logs -f netbox-mcp-server
 docker-compose ps
 ```
 
-### 4. Test Both Deployments
+#### 5. Verify Deployment
 
 ```bash
 # Test Meraki MCP Server
-open http://localhost:8000
+curl http://localhost:8000/health
 
 # Test NetBox MCP Server  
-open http://localhost:8001
+curl http://localhost:8001/health
 ```
 
-## 🔧 Configuration Options
+## 💻 Usage
+
+### 🌐 Server Endpoints
+
+Both MCP servers provide standardized endpoints for integration:
+
+- **Meraki MCP Server**: `http://localhost:8000` (or `http://meraki-mcp-server:8000` within Docker network)
+- **NetBox MCP Server**: `http://localhost:8001` (or `http://netbox-mcp-server:8001` within Docker network)
+
+### ⚙️ Configuration Options
 
 ### Environment Variables
 
@@ -361,10 +416,39 @@ deploy:
       cpus: '0.5'
 ```
 
-## 🤝 Support
+## 🤝 Contributing
 
-If you encounter issues:
+Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+
+### Development
+
+For development contributions:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Test your changes with `docker-compose up -d --build`
+5. Commit your changes (`git commit -m 'Add some amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the Cisco Sample Code License, Version 1.1 - see the [LICENSE](LICENSE) file for details.
+
+## 💬 Support
+
+For support and questions:
 
 1. Check the logs: `docker-compose logs meraki-mcp-server`
-2. Verify configuration: Review your `.env` file
-3. Check resources: `docker stats`
+2. Review configuration: Check your service-specific `.env` files for API keys and settings
+3. Monitor resources: `docker stats`
+4. Open an issue on GitHub for bugs or feature requests
+
+## 🙏 Acknowledgments
+
+Special thanks to **kiskander** for the original [Meraki MCP Server](https://github.com/kiskander/meraki-mcp-server) implementation. This project builds upon that foundation to provide a containerized, multi-server deployment solution.
+
+## ⚠️ Disclaimer
+
+This project is part of the Cisco DevNet community and is not officially supported by Cisco Systems. Use at your own risk in production environments.
