@@ -1,0 +1,8 @@
+services:
+  meraki-mcp-servers:
+    networks: ['demo']
+  netbox-mcp-server:
+    networks: ['demo']
+networks:
+  demo:
+    external: true

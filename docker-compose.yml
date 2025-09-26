@@ -1,5 +1,5 @@
 services:
-  librechat-mcp-servers:
+  meraki-mcp-servers:
     build:
       context: ./meraki-mcp-server
       dockerfile: Dockerfile
@@ -22,10 +22,6 @@ services:
     volumes:
       # Mount configuration files (read-only)
       - ./meraki-mcp-server/openapi:/app/openapi:ro
-    
-    # Network configuration
-    networks:
-      - librechat_default
     
     # Security options
     security_opt:
@@ -67,10 +63,6 @@ services:
     ports:
       - "8001:8001"
     
-    # Network configuration
-    networks:
-      - librechat_default
-    
     # Security options
     security_opt:
       - no-new-privileges:true
@@ -91,7 +83,3 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-
-networks:
-  librechat_default:
-    external: true
