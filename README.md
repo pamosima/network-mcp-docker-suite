@@ -398,17 +398,24 @@ networks:
 
 3. **Configure LibreChat** with the override file above and deploy it
 
-4. **Access MCP servers from LibreChat containers:**
-   ```bash
-   # Meraki MCP Server
-   http://meraki-mcp-server:8000
-   
-   # NetBox MCP Server
-   http://netbox-mcp-server:8001
-   
-   # Catalyst Center MCP Server
-   http://catc-mcp-server:8002
+4. **Update LibreChat configuration** by adding MCP servers to your `librechat.yaml`:
+   ```yaml
+   mcpServers:
+     Meraki-MCP-Server:
+       type: sse
+       url: http://meraki-mcp-server:8000/sse
+       timeout: 60000
+     Netbox-MCP-Server:
+       type: sse
+       url: http://netbox-mcp-server:8001/sse
+       timeout: 60000
+     CatC-MCP-Server:
+       type: sse
+       url: http://catc-mcp-server:8002/sse
+       timeout: 60000
    ```
+
+5. **Restart LibreChat** to load the new MCP server configurations
 
 ### Local Development Access
 
