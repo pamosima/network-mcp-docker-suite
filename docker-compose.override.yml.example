@@ -3,6 +3,8 @@ services:
     networks: ['demo']
   netbox-mcp-server:
     networks: ['demo']
+  catc-mcp-server:
+    networks: ['demo']
 networks:
   demo:
     external: true

@@ -1,21 +1,22 @@
 # 🐳 Multi-MCP Server - Docker Deployment
 
-Multi-MCP Server implementation providing Cisco Meraki Dashboard API and NetBox DCIM/IPAM functionality through Model Context Protocol (MCP) servers. This project enables seamless integration with LibreChat and other MCP-compatible applications for network management and infrastructure documentation.
+Multi-MCP Server implementation providing Cisco Meraki Dashboard API, NetBox DCIM/IPAM, and Cisco Catalyst Center functionality through Model Context Protocol (MCP) servers. This project enables seamless integration with LibreChat and other MCP-compatible applications for comprehensive network management and infrastructure documentation.
 
 ## 📋 Description
 
-This repository contains two production-ready MCP servers designed for Cisco DevNet community use:
+This repository contains three production-ready MCP servers designed for Cisco DevNet community use:
 
 - **Meraki MCP Server**: Provides comprehensive access to Cisco Meraki Dashboard API functionality including device management, network monitoring, and configuration operations
 - **NetBox MCP Server**: Enables complete NetBox DCIM/IPAM capabilities for infrastructure documentation, IP address management, and device lifecycle tracking
+- **Catalyst Center MCP Server**: Delivers full Cisco Catalyst Center (DNA Center) functionality including network device management, site topology, client analytics, and network assurance
 
-Both servers are containerized using Docker and designed for easy deployment with LibreChat network integration, supporting role-based access control and production-grade security features.
+All servers are containerized using Docker with flexible deployment profiles, designed for easy integration with LibreChat and supporting role-based access control and production-grade security features.
 
 ## 🎯 Use Case
 
 Network administrators and DevOps teams need streamlined access to network infrastructure data and management capabilities. This solution provides:
 
-- **Unified Network Management**: Single interface for both Meraki cloud and on-premises NetBox systems
+- **Unified Network Management**: Single interface for Meraki cloud, on-premises NetBox systems, and Catalyst Center management
 - **Automated Documentation**: Real-time synchronization between network devices and documentation systems  
 - **Role-Based Operations**: Granular access control for different operational teams (NOC, SysAdmin, etc.)
 - **Integration Ready**: MCP protocol compatibility enables integration with AI assistants and automation platforms
@@ -36,6 +37,7 @@ Network administrators and DevOps teams need streamlined access to network infra
 - Docker Compose 2.0+  
 - Valid Meraki Dashboard API key
 - NetBox instance with API access (for NetBox MCP Server)
+- Cisco Catalyst Center with credentials (for Catalyst Center MCP Server)
 
 ### 🚀 Quick Start
 
@@ -49,23 +51,27 @@ cd devnet-mcp-servers
 
 #### 2. Configure Environment Variables
 
-Copy the environment templates and configure your API keys:
+Copy the environment templates and configure your API keys (only for servers you plan to deploy):
 
 ```bash
-# Copy Meraki environment template
+# Copy environment templates for the servers you need
+
+# For Meraki MCP server (if using --profile meraki or --profile all)
 cp meraki-mcp-server/.env.example meraki-mcp-server/.env
-
-# Copy NetBox environment template  
-cp netbox-mcp-server/.env.example netbox-mcp-server/.env
-
-# Edit the Meraki configuration
 nano meraki-mcp-server/.env
 
-# Edit the NetBox configuration
+# For NetBox MCP server (if using --profile netbox or --profile all)
+cp netbox-mcp-server/.env.example netbox-mcp-server/.env
 nano netbox-mcp-server/.env
+
+# For Catalyst Center MCP server (if using --profile catc or --profile all)
+cp catc-mcp-server/.env.example catc-mcp-server/.env
+nano catc-mcp-server/.env
 ```
 
-Configure your actual API keys in the respective `.env` files:
+> 💡 **Tip**: Only configure the `.env` files for the servers you plan to deploy. For example, if you only need Meraki integration, you only need to configure `meraki-mcp-server/.env`.
+
+Configure your actual credentials in the respective `.env` files:
 
 **meraki-mcp-server/.env:**
 ```bash
@@ -77,6 +83,13 @@ MCP_ROLE=noc
 ```bash
 NETBOX_URL=https://netbox.example.com
 NETBOX_TOKEN=your_netbox_token_here
+```
+
+**catc-mcp-server/.env:**
+```bash
+CATC_URL=https://dnac.example.com
+CATC_USERNAME=your_catalyst_center_username
+CATC_PASSWORD=your_catalyst_center_password
 ```
 
 #### 3. Optional: Configure Custom Networks
@@ -96,16 +109,33 @@ docker network create -d bridge demo
 
 #### 4. Deploy the Servers
 
-```bash
-# Build and start both servers in background
-docker-compose up -d
+You can deploy specific servers using Docker Compose profiles:
 
-# View logs for both servers
+```bash
+# Deploy ALL servers (default)
+docker-compose --profile all up -d
+
+# Deploy ONLY Meraki MCP server
+docker-compose --profile meraki up -d
+
+# Deploy ONLY NetBox MCP server
+docker-compose --profile netbox up -d
+
+# Deploy ONLY Catalyst Center MCP server
+docker-compose --profile catc up -d
+# or
+docker-compose --profile catalyst up -d
+
+# Deploy multiple specific servers
+docker-compose --profile meraki --profile netbox up -d
+
+# View logs for running servers
 docker-compose logs -f
 
 # View logs for specific server
 docker-compose logs -f meraki-mcp-server
 docker-compose logs -f netbox-mcp-server
+docker-compose logs -f catc-mcp-server
 
 # Check status
 docker-compose ps
@@ -119,16 +149,78 @@ curl http://localhost:8000/health
 
 # Test NetBox MCP Server  
 curl http://localhost:8001/health
+
+# Test Catalyst Center MCP Server
+curl http://localhost:8002/health
+```
+
+## 🎯 Deployment Profiles
+
+This project uses Docker Compose profiles to enable selective server deployment:
+
+### Available Profiles
+
+| Profile | Description | Servers Deployed |
+|---------|-------------|------------------|
+| `all` | Deploy all servers | Meraki + NetBox + Catalyst Center |
+| `meraki` | Deploy only Meraki server | Meraki MCP Server |
+| `netbox` | Deploy only NetBox server | NetBox MCP Server |
+| `catc` or `catalyst` | Deploy only Catalyst Center server | Catalyst Center MCP Server |
+| `management` | Deploy network management servers | Meraki + Catalyst Center |
+| `docs` | Deploy documentation-focused servers | NetBox + Catalyst Center |
+
+### Profile Usage Examples
+
+```bash
+# Common deployment scenarios
+docker-compose --profile all up -d          # Full deployment
+docker-compose --profile meraki up -d       # Cloud-only (Meraki)
+docker-compose --profile netbox up -d       # Documentation-only (NetBox)
+docker-compose --profile catc up -d         # Enterprise management (Catalyst Center)
+
+# Mixed deployments
+docker-compose --profile meraki --profile netbox up -d    # Management + Documentation
+docker-compose --profile meraki --profile catc up -d      # Network Management
+docker-compose --profile netbox --profile catc up -d      # Documentation + Enterprise
+
+# Stop specific profiles
+docker-compose --profile meraki down        # Stop only Meraki server
+docker-compose --profile all down           # Stop all servers
+```
+
+### 🚀 Convenience Script (Recommended)
+
+For easier deployment management, use the included `deploy.sh` script:
+
+```bash
+# Make script executable (one-time setup)
+chmod +x deploy.sh
+
+# Easy deployment commands
+./deploy.sh start all          # Start all servers
+./deploy.sh start meraki       # Start only Meraki
+./deploy.sh start management   # Start Meraki + Catalyst Center
+./deploy.sh start docs         # Start NetBox + Catalyst Center
+
+# Management commands
+./deploy.sh status all         # Check status
+./deploy.sh logs meraki        # View logs
+./deploy.sh stop all           # Stop servers
+./deploy.sh restart meraki     # Restart specific server
+
+# Show all available options
+./deploy.sh help
 ```
 
 ## 💻 Usage
 
 ### 🌐 Server Endpoints
 
-Both MCP servers provide standardized endpoints for integration:
+All MCP servers provide standardized endpoints for integration:
 
 - **Meraki MCP Server**: `http://localhost:8000` (or `http://meraki-mcp-server:8000` within Docker network)
 - **NetBox MCP Server**: `http://localhost:8001` (or `http://netbox-mcp-server:8001` within Docker network)
+- **Catalyst Center MCP Server**: `http://localhost:8002` (or `http://catc-mcp-server:8002` within Docker network)
 
 ### ⚙️ Configuration Options
 
@@ -151,6 +243,15 @@ Both MCP servers provide standardized endpoints for integration:
 | `NETBOX_TOKEN` | NetBox API token | - | ✅ Yes |
 | `NETBOX_MCP_PORT` | Host port mapping for NetBox server | `8001` | No |
 
+#### Catalyst Center MCP Server Variables:
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `CATC_URL` | Catalyst Center URL | - | ✅ Yes |
+| `CATC_USERNAME` | Catalyst Center username | - | ✅ Yes |
+| `CATC_PASSWORD` | Catalyst Center password | - | ✅ Yes |
+| `CATC_MCP_PORT` | Host port mapping for Catalyst Center server | `8002` | No |
+
 ### Access Control Roles
 
 - **`noc`**: Network Operations Center - monitoring + firmware upgrades
@@ -162,45 +263,59 @@ Both MCP servers provide standardized endpoints for integration:
 ### Basic Operations
 
 ```bash
-# Start services
-docker-compose up -d
+# Start services (requires profile specification)
+docker-compose --profile all up -d              # All servers
+docker-compose --profile meraki up -d           # Meraki only
 
 # Stop services
-docker-compose down
+docker-compose --profile all down               # All servers
+docker-compose --profile meraki down            # Meraki only
+docker-compose down                              # All running containers
 
 # Restart services
-docker-compose restart
+docker-compose --profile all restart            # All servers
+docker-compose restart meraki-mcp-server        # Specific server
 
 # View logs
-docker-compose logs meraki-mcp-server
+docker-compose logs meraki-mcp-server           # Specific server
+docker-compose logs                              # All running servers
 
 # Follow logs in real-time
-docker-compose logs -f meraki-mcp-server
+docker-compose logs -f meraki-mcp-server        # Specific server
+docker-compose logs -f                           # All running servers
 
 # Check service status
-docker-compose ps
+docker-compose ps                                # All containers
+docker-compose --profile meraki ps              # Profile-specific
 
 # Check resource usage
-docker stats meraki-mcp-server
+docker stats meraki-mcp-server                  # Specific server
+docker stats                                     # All running containers
 ```
 
 ### Development Operations
 
 ```bash
 # Rebuild image after code changes
-docker-compose build
+docker-compose --profile all build              # All servers
+docker-compose build meraki-mcp-server          # Specific server
 
 # Rebuild and restart
-docker-compose up -d --build
+docker-compose --profile all up -d --build      # All servers
+docker-compose --profile meraki up -d --build   # Meraki only
 
 # Run without cache
-docker-compose build --no-cache
+docker-compose --profile all build --no-cache   # All servers
+docker-compose build --no-cache meraki-mcp-server  # Specific server
 
 # Shell into running container
 docker-compose exec meraki-mcp-server /bin/bash
+docker-compose exec netbox-mcp-server /bin/bash
+docker-compose exec catc-mcp-server /bin/bash
 
 # Run one-off commands
 docker-compose run --rm meraki-mcp-server python --version
+docker-compose --profile netbox run --rm netbox-mcp-server python --version
 ```
 
 ### Maintenance Operations

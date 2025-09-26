@@ -11,12 +11,12 @@ Network administrators and DevOps teams face significant challenges in managing 
 
 ## Proposed Solution
 
-The DevNet MCP Servers project provides a unified Model Context Protocol (MCP) interface for both Cisco Meraki Dashboard API and NetBox DCIM/IPAM systems. This solution enables:
+The DevNet MCP Servers project provides a unified Model Context Protocol (MCP) interface for Cisco Meraki Dashboard API, NetBox DCIM/IPAM systems, and Cisco Catalyst Center management. This solution enables:
 
 ### Key Capabilities
 
 1. **Unified Network Access**
-   - Single MCP interface for both Meraki cloud and NetBox on-premises systems
+   - Single MCP interface for Meraki cloud, NetBox on-premises, and Catalyst Center systems
    - Standardized API access patterns across different network management platforms
    - Role-based access control for different operational teams
 
