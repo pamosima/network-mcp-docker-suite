@@ -12,14 +12,14 @@ Features:
 - Automatic handling of Meraki API null values
 - OpenAPI-based tool generation
 - Secure API key authentication
-- SSE-based communication
+- HTTP-based communication
 - Web interface support
 
 Environment Variables:
 - MERAKI_KEY: Required. Your Meraki Dashboard API key
 - MCP_ROLE: Optional. Role for access control (noc|sysadmin|all). Defaults to 'noc'
-- MCP_PORT: Optional. Port for SSE server. Defaults to 8000
-- MCP_HOST: Optional. Host for SSE server. Defaults to localhost
+- MCP_PORT: Optional. Port for HTTP server. Defaults to 8000
+- MCP_HOST: Optional. Host for HTTP server. Defaults to localhost
 
 Author: Kareem Iskander
 """
@@ -408,20 +408,20 @@ except Exception as e:
 
 # ---- Server Startup ----
 if __name__ == "__main__":
-    print(f"🚀 Meraki MCP Server (SSE Mode) starting...")
+    print(f"🚀 Meraki MCP Server starting...")
     print(f"🔗 API Base URL: {client.base_url}")
     print(f"👤 Role: {role.upper()}")
     print(f"🛠️  Available endpoints: {len([r for r in selected_routes if r.mcp_type == MCPType.TOOL])}")
     print(f"🌐 Server starting on: http://{sse_host}:{sse_port}")
-    print(f"📡 SSE endpoint: http://{sse_host}:{sse_port}/sse")
-    print(f"✅ Server ready for MCP client connections via SSE.")
+    print(f"🔗 HTTP endpoint: http://{sse_host}:{sse_port}")
+    print(f"✅ Server ready for MCP client connections via HTTP.")
     
-    # Start the MCP server in SSE mode
+    # Start the MCP server in HTTP mode
     try:
-        mcp.run(transport="sse", host=sse_host, port=sse_port)
+        mcp.run(transport="http", host=sse_host, port=sse_port)
     except Exception as e:
-        print(f"❌ Failed to start SSE server: {e}")
-        print(f"💡 Trying alternative SSE startup method...")
+        print(f"❌ Failed to start HTTP server: {e}")
+        print(f"💡 Trying alternative HTTP startup method...")
         # Alternative method if the above doesn't work
         import uvicorn
         app = mcp.create_app()

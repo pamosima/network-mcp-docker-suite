@@ -395,7 +395,7 @@ if __name__ == "__main__":
     
     # Start the MCP server in SSE mode
     try:
-        mcp.run(transport="sse", host=sse_host, port=sse_port)
+        mcp.run(transport="http", host=sse_host, port=sse_port)
     except Exception as e:
         print(f"❌ Failed to start SSE server: {e}")
         print(f"💡 Trying alternative SSE startup method...")

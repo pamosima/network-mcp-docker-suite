@@ -34,5 +34,5 @@ ENV PYTHONPATH=/app
 ENV MCP_HOST=0.0.0.0
 ENV MCP_PORT=8000
 
-# Run the SSE server
-CMD ["uv", "run", "python", "meraki_mcp_server_sse.py"]
+# Run the MCP server
+CMD ["uv", "run", "python", "meraki_mcp_server.py"]

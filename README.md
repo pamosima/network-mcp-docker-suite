@@ -440,20 +440,20 @@ networks:
    ```yaml
    mcpServers:
      Meraki-MCP-Server:
-       type: sse
-       url: http://meraki-mcp-server:8000/sse
+       type: http
+       url: http://meraki-mcp-server:8000
        timeout: 60000
      Netbox-MCP-Server:
-       type: sse
-       url: http://netbox-mcp-server:8001/sse
+       type: http
+       url: http://netbox-mcp-server:8001
        timeout: 60000
      CatC-MCP-Server:
-       type: sse
-       url: http://catc-mcp-server:8002/sse
+       type: http
+       url: http://catc-mcp-server:8002
        timeout: 60000
      IOS-XE-MCP-Server:
-       type: sse
-       url: http://ios-xe-mcp-server:8003/sse
+       type: http
+       url: http://ios-xe-mcp-server:8003
        timeout: 60000
    ```
 

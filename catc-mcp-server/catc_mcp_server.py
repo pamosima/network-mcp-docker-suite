@@ -340,4 +340,4 @@ if __name__ == "__main__":
         exit(1)
     
     # Start the MCP server
-    mcp.run(transport="sse", host=MCP_HOST, port=MCP_PORT)
+    mcp.run(transport="http", host=MCP_HOST, port=MCP_PORT)

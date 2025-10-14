@@ -88,7 +88,7 @@ def config_command(host: str, username: str, password: str, commands: list[str])
         return error_msg
 
 
-# Start Server (SSE Mode for LibreChat integration)
+# Start Server (HTTP Mode for LibreChat integration)
 if __name__ == "__main__":
     import os
     
@@ -97,4 +97,4 @@ if __name__ == "__main__":
     port = int(os.getenv("MCP_PORT", "8003"))
     
     logger.info(f"Starting IOS XE MCP server on {host}:{port}")
-    mcp.run(transport="sse", host=host, port=port)
+    mcp.run(transport="http", host=host, port=port)

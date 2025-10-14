@@ -10,6 +10,7 @@ This MCP server provides direct SSH-based management capabilities for Cisco IOS 
 - **Monitoring Commands**: Execute show commands for device monitoring
 - **Secure Authentication**: Per-request credential handling (no stored passwords)
 - **Enhanced Security**: SSH-based communication with timeout controls
+- **HTTP Transport**: Modern MCP transport for network clients and LibreChat integration
 
 ## Features
 
