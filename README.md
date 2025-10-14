@@ -1,17 +1,17 @@
-# 🐳 Multi-MCP Server - Docker Deployment
+# 🌐 Network MCP Docker Suite
 
-Multi-MCP Server implementation providing Cisco Meraki Dashboard API, NetBox DCIM/IPAM, Cisco Catalyst Center, and IOS XE device management functionality through Model Context Protocol (MCP) servers. This project enables seamless integration with LibreChat and other MCP-compatible applications for comprehensive network management and infrastructure documentation.
+A comprehensive Docker-based suite of Model Context Protocol (MCP) servers for network infrastructure management. This production-ready platform provides Cisco Meraki Dashboard API, NetBox DCIM/IPAM, Cisco Catalyst Center, and IOS XE device management through containerized MCP servers. Designed for seamless LibreChat integration and modern network automation workflows.
 
 ## 📋 Description
 
-This repository contains four production-ready MCP servers designed for Cisco DevNet community use:
+This Docker suite contains four production-ready MCP servers for comprehensive network infrastructure management:
 
 - **Meraki MCP Server**: Provides comprehensive access to Cisco Meraki Dashboard API functionality including device management, network monitoring, and configuration operations
 - **NetBox MCP Server**: Enables complete NetBox DCIM/IPAM capabilities for infrastructure documentation, IP address management, and device lifecycle tracking
 - **Catalyst Center MCP Server**: Delivers full Cisco Catalyst Center (DNA Center) functionality including network device management, site topology, client analytics, and network assurance
 - **IOS XE MCP Server**: Enables direct SSH-based management of Cisco IOS XE devices including configuration changes, monitoring commands, and device information retrieval
 
-All servers are containerized using Docker with flexible deployment profiles, designed for easy integration with LibreChat and supporting role-based access control and production-grade security features.
+All servers are containerized using Docker with flexible deployment profiles, designed for production environments with role-based access control, security hardening, and seamless LibreChat integration.
 
 ## 🎯 Use Case
 
@@ -47,8 +47,8 @@ Network administrators and DevOps teams need streamlined access to network infra
 
 ```bash
 # Clone this repository
-git clone https://github.com/your-username/devnet-mcp-servers.git
-cd devnet-mcp-servers
+git clone https://github.com/pamosima/network-mcp-docker-suite.git
+cd network-mcp-docker-suite
 ```
 
 #### 2. Configure Environment Variables
