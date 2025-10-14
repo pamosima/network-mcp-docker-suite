@@ -23,7 +23,7 @@ This MCP server provides **ultra-secure** SSH-based management capabilities for 
 ### Security Features
 
 - 🔐 **Environment-only credentials** - No password parameters accepted  
-- 🔐 **Password masking** - Passwords masked in all logs (`C1sco12345` → `C*********`)
+- 🔐 **Password masking** - Passwords masked in all logs (`your_default_password` → `y*********`)
 - 🔐 **Error sanitization** - Passwords removed from error messages (`***REDACTED***`)
 - 🔐 **Startup validation** - Server fails securely if credentials missing
 - ✅ **SSH timeout controls** - Configurable connection timeouts
@@ -40,16 +40,16 @@ This MCP server provides **ultra-secure** SSH-based management capabilities for 
 ```python
 # Ultra-secure: Only host and command required (credentials from .env)
 result = show_command("show version", "192.168.1.1")
-result = show_command("show ip interface brief", "10.1.1.1") 
-result = show_command("show ip route summary", "10.13.254.84")
+result = show_command("show ip interface brief", "192.168.1.1") 
+result = show_command("show ip route summary", "192.168.1.1")
 
-# Check BGP status (real example from Leaf-2)
-result = show_command("show ip bgp summary", "10.13.254.84")
-result = show_command("show bgp l2vpn evpn summary", "10.13.254.84")
+# Check BGP status
+result = show_command("show ip bgp summary", "192.168.1.1")
+result = show_command("show bgp l2vpn evpn summary", "192.168.1.1")
 
 # Device information commands  
-result = show_command("show version", "10.13.254.84")
 result = show_command("show ip protocols", "192.168.1.1")
+result = show_command("show running-config interface gi0/1", "192.168.1.1")
 ```
 
 ### Configuration Commands
@@ -65,23 +65,23 @@ result = config_command([
 # Network configuration
 result = config_command([
     "ip route 10.1.0.0 255.255.0.0 192.168.1.254"
-], "10.1.1.1")
+], "192.168.1.1")
 
 # Multiple interface configuration
 result = config_command([
     "interface range GigabitEthernet0/1-4",
     "switchport mode access",
     "switchport access vlan 100"
-], "10.13.254.84")
+], "192.168.1.1")
 ```
 
 ### Security Logs Example
 
 ```log
-INFO: Loaded credentials for user: netadmin
+INFO: Loaded credentials for user: admin
 INFO: Secure mode: Credentials loaded from environment only
-INFO: Connecting to 10.13.254.84 as 'netadmin' (pwd: C*********) to execute: show ip bgp summary
-INFO: Successfully executed command on 10.13.254.84
+INFO: Connecting to 192.168.1.1 as 'admin' (pwd: y*********) to execute: show ip bgp summary
+INFO: Successfully executed command on 192.168.1.1
 ```
 
 ## Configuration
@@ -124,8 +124,8 @@ nano .env
 # =====================================================
 
 # REQUIRED: Device credentials (server fails without these)
-IOS_XE_USERNAME=netadmin
-IOS_XE_PASSWORD=C1sco12345
+IOS_XE_USERNAME=admin
+IOS_XE_PASSWORD=your_default_password
 
 # Optional: Server configuration  
 MCP_HOST=0.0.0.0
@@ -188,7 +188,7 @@ uv run python ios_xe_mcp_server.py
 
 - 🔐 **Environment-Only Credentials**: Passwords never appear in function parameters or traces
 - 🔐 **Startup Validation**: Server fails securely if credentials are missing from environment  
-- 🔐 **Password Masking**: All passwords masked in logs (`C1sco12345` → `C*********`)
+- 🔐 **Password Masking**: All passwords masked in logs (`your_default_password` → `y*********`)
 - 🔐 **Error Sanitization**: Passwords automatically removed from error messages (`***REDACTED***`)
 - 🔐 **No Credential Storage**: Device credentials loaded from environment only
 - 🔐 **SSH Only**: Secure encrypted communication to devices
@@ -215,7 +215,7 @@ uv run python ios_xe_mcp_server.py
 All operations are logged securely without exposing credentials:
 
 ```log
-INFO: Loaded credentials for user: netadmin
+INFO: Loaded credentials for user: admin
 INFO: Secure mode: Credentials loaded from environment only
 INFO: Starting SECURE IOS XE MCP server on 0.0.0.0:8003
 INFO: Security: Environment-only credentials, no password parameters accepted
@@ -243,8 +243,8 @@ docker-compose exec ios-xe-mcp-server env | grep IOS_XE
 # This happens when using old function signatures
 
 # Solution: Use new ultra-secure syntax (no credentials)
-show_command("show version", "10.13.254.84")  # ✅ Correct
-show_command("show version", "10.13.254.84", username="user", password="pass")  # ❌ Wrong
+show_command("show version", "192.168.1.1")  # ✅ Correct
+show_command("show version", "192.168.1.1", username="user", password="pass")  # ❌ Wrong
 ```
 
 **SSH Connection Failures**
@@ -259,7 +259,7 @@ telnet <device-ip> 22
 show ip ssh
 
 # Verify credentials work manually
-ssh netadmin@10.13.254.84
+ssh admin@192.168.1.1
 ```
 
 **Authentication Errors**
@@ -279,7 +279,7 @@ Common causes:
 SSH_TIMEOUT=120
 
 # Or check device response time
-time ssh netadmin@10.13.254.84 "show version"
+time ssh admin@192.168.1.1 "show version"
 ```
 
 ### Debug Logging
@@ -291,7 +291,7 @@ Enable detailed logging by setting `LOG_LEVEL=DEBUG` in environment variables.
 docker-compose logs -f ios-xe-mcp-server
 
 # Example secure log output:
-# INFO: Connecting to 10.13.254.84 as 'netadmin' (pwd: C*********) to execute: show version
+# INFO: Connecting to 192.168.1.1 as 'admin' (pwd: y*********) to execute: show version
 ```
 
 ### Security Validation
@@ -300,9 +300,9 @@ docker-compose logs -f ios-xe-mcp-server
 # Test that password masking works
 docker-compose exec ios-xe-mcp-server uv run python -c "
 from ios_xe_mcp_server import mask_password
-print('Password masking test:', mask_password('C1sco12345'))
+print('Password masking test:', mask_password('your_default_password'))
 "
-# Output: Password masking test: C*********
+# Output: Password masking test: y*********
 ```
 
 ## API Reference
@@ -315,13 +315,13 @@ Execute a show command on an IOS XE device.
 
 **Parameters:**
 - `command` (string): Show command to execute (e.g., `"show ip bgp summary"`)
-- `host` (string): Device IP address or hostname (e.g., `"10.13.254.84"`)
+- `host` (string): Device IP address or hostname (e.g., `"192.168.1.1"`)
 
 **Returns:** Command output as string
 
 **Example:**
 ```python
-result = show_command("show version", "10.13.254.84")
+result = show_command("show version", "192.168.1.1")
 ```
 
 ### Tool: config_command
@@ -341,14 +341,14 @@ Send configuration commands to an IOS XE device.
 result = config_command([
     "interface GigabitEthernet0/1", 
     "no shutdown"
-], "10.13.254.84")
+], "192.168.1.1")
 ```
 
 ### Security Features
 
 Both tools automatically:
 - ✅ Load credentials from `IOS_XE_USERNAME` and `IOS_XE_PASSWORD` environment variables
-- ✅ Mask passwords in logs (`C*********`)  
+- ✅ Mask passwords in logs (`y*********`)  
 - ✅ Sanitize error messages (`***REDACTED***`)
 - ✅ Validate environment setup on server startup
 - ✅ Save configuration changes automatically
