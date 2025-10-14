@@ -5,6 +5,8 @@ services:
     networks: ['demo']
   catc-mcp-server:
     networks: ['demo']
+  ios-xe-mcp-server:
+    networks: ['demo']
 networks:
   demo:
     external: true
