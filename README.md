@@ -161,17 +161,11 @@ docker-compose ps
 #### 5. Verify Deployment
 
 ```bash
-# Test Meraki MCP Server
-curl http://localhost:8000/health
-
-# Test NetBox MCP Server  
-curl http://localhost:8001/health
-
-# Test Catalyst Center MCP Server
-curl http://localhost:8002/health
-
-# Test IOS XE MCP Server
-curl http://localhost:8003/health
+# Test MCP servers (check if they respond to MCP protocol)
+curl http://localhost:8000/mcp    # Meraki MCP Server
+curl http://localhost:8001/mcp    # NetBox MCP Server  
+curl http://localhost:8002/mcp    # Catalyst Center MCP Server
+curl http://localhost:8003/mcp    # IOS XE MCP Server
 ```
 
 ## 🎯 Deployment Options
@@ -240,10 +234,10 @@ chmod +x deploy.sh
 
 All MCP servers provide standardized endpoints for integration:
 
-- **Meraki MCP Server**: `http://localhost:8000` (or `http://meraki-mcp-server:8000` within Docker network)
-- **NetBox MCP Server**: `http://localhost:8001` (or `http://netbox-mcp-server:8001` within Docker network)
-- **Catalyst Center MCP Server**: `http://localhost:8002` (or `http://catc-mcp-server:8002` within Docker network)
-- **IOS XE MCP Server**: `http://localhost:8003` (or `http://ios-xe-mcp-server:8003` within Docker network)
+- **Meraki MCP Server**: `http://localhost:8000/mcp` (or `http://meraki-mcp-server:8000/mcp` within Docker network)
+- **NetBox MCP Server**: `http://localhost:8001/mcp` (or `http://netbox-mcp-server:8001/mcp` within Docker network)
+- **Catalyst Center MCP Server**: `http://localhost:8002/mcp` (or `http://catc-mcp-server:8002/mcp` within Docker network)
+- **IOS XE MCP Server**: `http://localhost:8003/mcp` (or `http://ios-xe-mcp-server:8003/mcp` within Docker network)
 
 ### ⚙️ Configuration Options
 
@@ -440,20 +434,20 @@ networks:
    ```yaml
    mcpServers:
      Meraki-MCP-Server:
-       type: http
-       url: http://meraki-mcp-server:8000
+       type: streamable-http
+       url: http://meraki-mcp-server:8000/mcp
        timeout: 60000
      Netbox-MCP-Server:
-       type: http
-       url: http://netbox-mcp-server:8001
+       type: streamable-http
+       url: http://netbox-mcp-server:8001/mcp
        timeout: 60000
      CatC-MCP-Server:
-       type: http
-       url: http://catc-mcp-server:8002
+       type: streamable-http
+       url: http://catc-mcp-server:8002/mcp
        timeout: 60000
      IOS-XE-MCP-Server:
-       type: http
-       url: http://ios-xe-mcp-server:8003
+       type: streamable-http
+       url: http://ios-xe-mcp-server:8003/mcp
        timeout: 60000
    ```
 
@@ -464,14 +458,11 @@ networks:
 For local testing and development, all servers are accessible on the host at:
 
 ```bash
-# Meraki MCP Server
-curl http://localhost:8000/health
-
-# NetBox MCP Server  
-curl http://localhost:8001/health
-
-# Catalyst Center MCP Server
-curl http://localhost:8002/health
+# Test MCP server availability
+curl http://localhost:8000/mcp    # Meraki MCP Server
+curl http://localhost:8001/mcp    # NetBox MCP Server  
+curl http://localhost:8002/mcp    # Catalyst Center MCP Server
+curl http://localhost:8003/mcp    # IOS XE MCP Server
 ```
 
 ### Network Isolation Benefits
