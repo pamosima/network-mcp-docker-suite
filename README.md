@@ -1,17 +1,20 @@
 # 🌐 Network MCP Docker Suite
 
-A comprehensive Docker-based suite of Model Context Protocol (MCP) servers for network infrastructure management. This production-ready platform provides Cisco Meraki Dashboard API, NetBox DCIM/IPAM, Cisco Catalyst Center, and IOS XE device management through containerized MCP servers. Designed for seamless LibreChat integration and modern network automation workflows.
+> **📚 Example Code for Learning & Development**  
+> This is a demonstration project showcasing MCP server implementations for network management. Intended for educational purposes, testing, and development environments.
+
+A comprehensive Docker-based suite of Model Context Protocol (MCP) servers for network infrastructure management. This example implementation provides Cisco Meraki Dashboard API, NetBox DCIM/IPAM, Cisco Catalyst Center, and IOS XE device management through containerized MCP servers. Designed for demonstration, learning, and integration with MCP clients like Cursor, LibreChat, and other MCP-enabled applications.
 
 ## 📋 Description
 
-This Docker suite contains four production-ready MCP servers for comprehensive network infrastructure management:
+This Docker suite contains four example MCP servers for comprehensive network infrastructure management:
 
 - **Meraki MCP Server**: Provides comprehensive access to Cisco Meraki Dashboard API functionality including device management, network monitoring, and configuration operations
 - **NetBox MCP Server**: Enables complete NetBox DCIM/IPAM capabilities for infrastructure documentation, IP address management, and device lifecycle tracking
-- **Catalyst Center MCP Server**: Delivers full Cisco Catalyst Center (DNA Center) functionality including network device management, site topology, client analytics, and network assurance
+- **Catalyst Center MCP Server**: Delivers full Cisco Catalyst Center functionality including network device management, site topology, client analytics, and network assurance
 - **IOS XE MCP Server**: Enables direct SSH-based management of Cisco IOS XE devices including configuration changes, monitoring commands, and device information retrieval
 
-All servers are containerized using Docker with flexible deployment profiles, designed for production environments with role-based access control, security hardening, and seamless LibreChat integration.
+All servers are containerized using Docker with flexible deployment profiles, designed for development, testing, and demonstration environments with seamless integration across MCP clients.
 
 ## 🎯 Use Case
 
@@ -26,7 +29,7 @@ Network administrators and DevOps teams need streamlined access to network infra
 
 ### 🏢 Architecture
 - **MCP Protocol Implementation**: Standards-based Model Context Protocol for AI integration
-- **Docker Containerization**: Production-ready containers with security hardening
+- **Docker Containerization**: Well-structured containers with security considerations
 - **Network Isolation**: Secure communication via Docker networks
 - **Role-Based Access**: Configurable permission levels for different user types
 
@@ -93,7 +96,7 @@ NETBOX_TOKEN=your_netbox_token_here
 
 **catc-mcp-server/.env:**
 ```bash
-CATC_URL=https://dnac.example.com
+CATC_URL=https://catalyst-center.example.com
 CATC_USERNAME=your_catalyst_center_username
 CATC_PASSWORD=your_catalyst_center_password
 ```
@@ -111,7 +114,7 @@ LOG_LEVEL=INFO
 
 #### 3. Optional: Configure Custom Networks
 
-If you need custom network settings (e.g., for LibreChat integration), copy and modify the network override file:
+If you need custom network settings (e.g., for integration with other applications), copy and modify the network override file:
 
 ```bash
 # Copy the network configuration template (optional)
@@ -366,11 +369,19 @@ docker-compose logs meraki-mcp-server > meraki-server.log
 
 ## 🌐 Network Access
 
-### LibreChat Integration
+### Quick Start: MCP Client Configuration
 
-For seamless integration with LibreChat, all MCP servers can run on the same Docker network using Docker Compose override files.
+| **MCP Client** | **Configuration File** | **Port Range** |
+|---|---|---|
+| **Cursor IDE** | `~/.cursor/mcp.json` | 8000-8003 |
+| **LibreChat** | `librechat.yaml` | 8000-8003 |
+| **Custom Client** | HTTP transport to `localhost:PORT/mcp` | 8000-8003 |
 
-#### MCP Servers Network Configuration
+### MCP Client Integration
+
+For seamless integration with MCP clients (Cursor, LibreChat, etc.), all MCP servers can run on the same Docker network using Docker Compose override files.
+
+#### Network Configuration for MCP Clients
 
 The MCP servers can be configured to use a custom network using `docker-compose.override.yml`:
 
@@ -390,9 +401,9 @@ networks:
     external: true
 ```
 
-#### LibreChat Network Configuration
+#### Example: LibreChat Integration
 
-Configure LibreChat to use the same network by creating a `docker-compose.override.yml` in your LibreChat project:
+If using LibreChat specifically, configure it to use the same network by creating a `docker-compose.override.yml` in your LibreChat project:
 
 ```yaml
 # docker-compose.override.yml for LibreChat
@@ -412,7 +423,7 @@ networks:
     external: true
 ```
 
-#### Setup Steps for LibreChat Integration
+#### Example Setup Steps for LibreChat
 
 1. **Create the shared network:**
    ```bash
@@ -428,9 +439,9 @@ networks:
    ./deploy.sh start all
    ```
 
-3. **Configure LibreChat** with the override file above and deploy it
+3. **Configure your MCP client** (Cursor, LibreChat, etc.) to connect to the servers
 
-4. **Update LibreChat configuration** by adding MCP servers to your `librechat.yaml`:
+4. **For LibreChat specifically**, add MCP servers to your `librechat.yaml`:
    ```yaml
    mcpServers:
      Meraki-MCP-Server:
@@ -451,7 +462,43 @@ networks:
        timeout: 60000
    ```
 
-5. **Restart LibreChat** to load the new MCP server configurations
+5. **Restart your MCP client** to load the new MCP server configurations
+
+#### Example: Cursor IDE Integration
+
+For **Cursor IDE**, create or update your `~/.cursor/mcp.json` file:
+
+```json
+{
+  "mcpServers": {
+    "Meraki-MCP-Server": {
+      "transport": "http",
+      "url": "http://localhost:8000/mcp",
+      "timeout": 60000
+    },
+    "NetBox-MCP-Server": {
+      "transport": "http",
+      "url": "http://localhost:8001/mcp",
+      "timeout": 60000
+    },
+    "Catalyst-Center-MCP-Server": {
+      "transport": "http",
+      "url": "http://localhost:8002/mcp",
+      "timeout": 60000
+    },
+    "IOS-XE-MCP-Server": {
+      "transport": "http", 
+      "url": "http://localhost:8003/mcp",
+      "timeout": 60000
+    }   
+  }
+}
+```
+
+> **💡 Pro Tips:**
+> - **Cursor**: Restart Cursor after updating `mcp.json`
+> - **LibreChat**: Use the web interface to restart the service
+> - **All Clients**: Check logs if servers don't appear in the client
 
 ### Local Development Access
 
@@ -610,9 +657,11 @@ cp docker-compose.yml docker-compose.yml.backup
 docker export meraki-mcp-server > meraki-backup.tar
 ```
 
-## 🏗️ Production Deployment
+## 🏗️ Advanced Deployment
 
-### Recommended Production Setup
+### Enterprise Deployment Considerations
+
+> **Note:** The following are recommendations for those adapting this example code for enterprise use. Additional security review and testing would be required.
 
 1. **Use Docker Swarm or Kubernetes** for orchestration
 2. **Set up monitoring** and alerting
@@ -668,6 +717,29 @@ This project is licensed under the Cisco Sample Code License, Version 1.1 - see 
 
 ## 💬 Support
 
+### Cursor IDE MCP Troubleshooting
+
+If MCP servers aren't appearing in Cursor:
+
+```bash
+# 1. Check MCP configuration file exists
+ls -la ~/.cursor/mcp.json
+
+# 2. Validate JSON syntax
+cat ~/.cursor/mcp.json | python -m json.tool
+
+# 3. Verify server accessibility  
+curl -X POST http://localhost:8000/mcp  # Meraki
+curl -X POST http://localhost:8001/mcp  # NetBox
+curl -X POST http://localhost:8002/mcp  # Catalyst Center
+curl -X POST http://localhost:8003/mcp  # IOS XE
+
+# 4. Check all servers are running
+./deploy.sh status all
+
+# 5. Restart Cursor completely and check logs
+```
+
 For support and questions:
 
 1. Check the logs: `docker-compose logs meraki-mcp-server`
@@ -681,4 +753,4 @@ Special thanks to **kiskander** for the original [Meraki MCP Server](https://git
 
 ## ⚠️ Disclaimer
 
-This project is part of the Cisco DevNet community and is not officially supported by Cisco Systems. Use at your own risk in production environments.
+This project is part of the Cisco DevNet community and is provided as **example code** for demonstration and learning purposes. It is not officially supported by Cisco Systems and is not intended for production use without proper testing and customization for your specific environment.

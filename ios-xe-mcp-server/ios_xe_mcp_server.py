@@ -1,4 +1,4 @@
-# IOS XE MCP Server for LibreChat integration
+# IOS XE MCP Server for MCP client integration
 # ============================================
 # MCP Server implementation for Cisco IOS XE device management
 # Provides SSH-based device configuration and monitoring capabilities
@@ -159,7 +159,7 @@ def config_command(commands: list[str], host: str) -> str:
             return safe_error
 
 
-# Start Server (HTTP Mode for LibreChat integration)
+# Start Server (HTTP Mode for MCP client integration)
 if __name__ == "__main__":
     import os
     

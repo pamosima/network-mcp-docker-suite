@@ -19,7 +19,7 @@ Environment Variables:
 - MCP_PORT: Optional. Port for SSE server. Defaults to 8001
 - MCP_HOST: Optional. Host for SSE server. Defaults to localhost
 
-Author: Generated for LibreChat Integration
+Author: Generated for MCP Client Integration
 """
 
 import abc

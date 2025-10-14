@@ -1,17 +1,17 @@
-# IOS XE MCP Server - Ultra Secure Edition
+# IOS XE MCP Server
 
 A Model Context Protocol (MCP) server for managing Cisco IOS XE devices via SSH using Netmiko with enterprise-grade security.
 
 ## Overview
 
-This MCP server provides **ultra-secure** SSH-based management capabilities for Cisco IOS XE devices, enabling:
+This MCP server provides **secure** SSH-based management capabilities for Cisco IOS XE devices, enabling:
 
 - **Device Configuration**: Send configuration commands to IOS XE devices
 - **Monitoring Commands**: Execute show commands for device monitoring  
-- **Ultra-Secure Authentication**: Environment-only credentials (no password parameters)
+- **Secure Authentication**: Environment-only credentials (no password parameters)
 - **Password Protection**: Comprehensive password masking and sanitization
 - **Enhanced Security**: SSH-based communication with timeout controls and error protection
-- **HTTP Transport**: Modern MCP transport for network clients and LibreChat integration
+- **HTTP Transport**: Modern MCP transport for MCP clients (Cursor, LibreChat, etc.)
 
 ## Features
 
@@ -38,7 +38,7 @@ This MCP server provides **ultra-secure** SSH-based management capabilities for 
 ### Show Commands
 
 ```python
-# Ultra-secure: Only host and command required (credentials from .env)
+# Secure: Only host and command required (credentials from .env)
 result = show_command("show version", "192.168.1.1")
 result = show_command("show ip interface brief", "192.168.1.1") 
 result = show_command("show ip route summary", "192.168.1.1")
@@ -55,7 +55,7 @@ result = show_command("show running-config interface gi0/1", "192.168.1.1")
 ### Configuration Commands
 
 ```python
-# Ultra-secure: Only commands and host required (credentials from .env)
+# Secure: Only commands and host required (credentials from .env)
 result = config_command([
     "interface GigabitEthernet0/1",
     "description Connected to Server", 
@@ -120,7 +120,7 @@ nano .env
 ### Example .env File
 
 ```bash
-# IOS XE MCP Server Configuration - Ultra Secure Edition
+# IOS XE MCP Server Configuration
 # =====================================================
 
 # REQUIRED: Device credentials (server fails without these)
@@ -184,7 +184,7 @@ uv run python ios_xe_mcp_server.py
 
 ## Security Considerations
 
-### Ultra-Secure Authentication
+### Secure Authentication
 
 - 🔐 **Environment-Only Credentials**: Passwords never appear in function parameters or traces
 - 🔐 **Startup Validation**: Server fails securely if credentials are missing from environment  
@@ -242,7 +242,7 @@ docker-compose exec ios-xe-mcp-server env | grep IOS_XE
 # Error: Validation errors for call[show_command] - username/password unexpected
 # This happens when using old function signatures
 
-# Solution: Use new ultra-secure syntax (no credentials)
+# Solution: Use new secure syntax (no credentials)
 show_command("show version", "192.168.1.1")  # ✅ Correct
 show_command("show version", "192.168.1.1", username="user", password="pass")  # ❌ Wrong
 ```

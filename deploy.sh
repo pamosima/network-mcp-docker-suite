@@ -1,5 +1,13 @@
 #!/bin/bash
-# DevNet MCP Servers - Deployment Helper Script
+# Network MCP Docker Suite - Deployment Helper Script
+# =============================================
+# Supports deployment of multiple MCP servers:
+# - Meraki MCP Server: Cisco Meraki cloud management
+# - NetBox MCP Server: Network documentation and IPAM  
+# - Catalyst Center MCP Server: Cisco Catalyst Center integration
+# - IOS XE MCP Server: Direct device management via SSH
+#
+# Updated: 2025-10-14 - Added IOS XE MCP server support
 
 set -e
 
@@ -12,7 +20,7 @@ NC='\033[0m' # No Color
 
 # Function to show usage
 show_usage() {
-    echo -e "${BLUE}DevNet MCP Servers - Deployment Helper${NC}"
+    echo -e "${BLUE}Network MCP Docker Suite - Deployment Helper${NC}"
     echo ""
     echo "Usage: $0 [COMMAND] [PROFILE]"
     echo ""
@@ -25,18 +33,22 @@ show_usage() {
     echo "  build     Build images"
     echo ""
     echo "Profiles:"
-    echo "  all       All servers (Meraki + NetBox + Catalyst Center)"
+    echo "  all       All servers (Meraki + NetBox + Catalyst Center + IOS XE)"
     echo "  meraki    Meraki MCP server only"
     echo "  netbox    NetBox MCP server only"
     echo "  catc      Catalyst Center MCP server only"
-    echo "  management Network management (Meraki + Catalyst Center)"
+    echo "  ios-xe    IOS XE MCP server only"
+    echo "  cisco     Cisco-focused (Meraki + Catalyst Center + IOS XE)"
+    echo "  network   Network management (Meraki + IOS XE)"
     echo "  docs      Documentation-focused (NetBox + Catalyst Center)"
     echo ""
     echo "Examples:"
     echo "  $0 start all          # Start all servers"
     echo "  $0 start meraki       # Start only Meraki server"
+    echo "  $0 start ios-xe       # Start only IOS XE server"
+    echo "  $0 start cisco        # Start Cisco-focused servers"
     echo "  $0 stop all           # Stop all servers"
-    echo "  $0 logs meraki        # Show Meraki server logs"
+    echo "  $0 logs ios-xe        # Show IOS XE server logs"
     echo ""
 }
 
@@ -45,7 +57,7 @@ build_service_args() {
     local profile=$1
     case $profile in
         "all")
-            echo "meraki-mcp-servers netbox-mcp-server catc-mcp-server"
+            echo "meraki-mcp-servers netbox-mcp-server catc-mcp-server ios-xe-mcp-server"
             ;;
         "meraki")
             echo "meraki-mcp-servers"
@@ -55,6 +67,15 @@ build_service_args() {
             ;;
         "catc"|"catalyst")
             echo "catc-mcp-server"
+            ;;
+        "ios-xe"|"iosxe")
+            echo "ios-xe-mcp-server"
+            ;;
+        "cisco")
+            echo "meraki-mcp-servers catc-mcp-server ios-xe-mcp-server"
+            ;;
+        "network"|"networking")
+            echo "meraki-mcp-servers ios-xe-mcp-server"
             ;;
         "management")
             echo "meraki-mcp-servers catc-mcp-server"
@@ -93,6 +114,13 @@ SERVICE_ARGS=$(build_service_args $PROFILE)
 case $COMMAND in
     "start")
         echo -e "${GREEN}Starting MCP servers with profile: $PROFILE${NC}"
+        
+        # Special message for IOS XE server
+        if [[ $SERVICE_ARGS == *"ios-xe-mcp-server"* ]]; then
+            echo -e "${BLUE}🔐 Starting IOS XE MCP Server${NC}"
+            echo -e "${YELLOW}   Environment-only credentials required (.env file)${NC}"
+        fi
+        
         if [ "$PROFILE" = "all" ]; then
             docker-compose up -d
         else
@@ -100,6 +128,11 @@ case $COMMAND in
         fi
         echo -e "${GREEN}Servers started successfully!${NC}"
         echo -e "${YELLOW}Use '$0 status $PROFILE' to check status${NC}"
+        
+        # Additional info for IOS XE server
+        if [[ $SERVICE_ARGS == *"ios-xe-mcp-server"* ]]; then
+            echo -e "${BLUE}💡 IOS XE Server: No credential parameters needed - uses .env only${NC}"
+        fi
         ;;
     "stop")
         echo -e "${YELLOW}Stopping MCP servers with profile: $PROFILE${NC}"

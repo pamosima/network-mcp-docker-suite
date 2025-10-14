@@ -14,13 +14,13 @@ Features:
 - Event and issue management
 
 Environment Variables:
-- CATC_URL: Required. Your Catalyst Center URL (e.g., https://dnac.example.com)
+- CATC_URL: Required. Your Catalyst Center URL (e.g., https://catalyst-center.example.com)
 - CATC_USERNAME: Required. Your Catalyst Center username
 - CATC_PASSWORD: Required. Your Catalyst Center password
 - MCP_PORT: Optional. Port for SSE server. Defaults to 8002
 - MCP_HOST: Optional. Host for SSE server. Defaults to localhost
 
-Author: Generated for LibreChat Integration
+Author: Generated for MCP Client Integration
 """
 
 import os

@@ -11,7 +11,7 @@ Network administrators and DevOps teams face significant challenges in managing 
 
 ## Proposed Solution
 
-The DevNet MCP Servers project provides a unified Model Context Protocol (MCP) interface for Cisco Meraki Dashboard API, NetBox DCIM/IPAM systems, and Cisco Catalyst Center management. This solution enables:
+The Network MCP Docker Suite provides a unified Model Context Protocol (MCP) interface for Cisco Meraki Dashboard API, NetBox DCIM/IPAM systems, and Cisco Catalyst Center management. This solution enables:
 
 ### Key Capabilities
 
@@ -108,4 +108,4 @@ An IT manager needs to generate quarterly compliance reports:
 - **Query Volume**: Number of successful API queries per day
 - **User Satisfaction**: Feedback scores from operational teams
 
-This use case demonstrates how the DevNet MCP Servers project addresses real-world network management challenges while providing a foundation for future AI-enabled network operations.
+This use case demonstrates how the Network MCP Docker Suite addresses real-world network management challenges while providing a foundation for future AI-enabled network operations.
