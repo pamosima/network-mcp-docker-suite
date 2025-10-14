@@ -16,11 +16,7 @@ This MCP server provides direct SSH-based management capabilities for Cisco IOS 
 ### Available Tools
 
 - **`show_command`**: Execute any show command on an IOS XE device
-- **`config_command`**: Send configuration commands to an IOS XE device  
-- **`show_version`**: Get device version information
-- **`show_interfaces`**: Get interface status and configuration
-- **`show_routing_table`**: Get routing table information
-- **`show_running_config`**: Get running configuration
+- **`config_command`**: Send configuration commands to an IOS XE device
 
 ### Security Features
 
@@ -35,18 +31,20 @@ This MCP server provides direct SSH-based management capabilities for Cisco IOS 
 ### Show Commands
 
 ```python
-# Get device version
-result = show_version(
+# Execute show command
+result = show_command(
     host="192.168.1.1",
-    username="admin", 
-    password="cisco123"
+    username="admin",
+    password="cisco123", 
+    command="show version"
 )
 
 # Get interface status
-result = show_interfaces(
+result = show_command(
     host="192.168.1.1",
     username="admin",
-    password="cisco123"
+    password="cisco123",
+    command="show ip interface brief"
 )
 
 # Execute custom show command
@@ -254,50 +252,6 @@ Send configuration commands to an IOS XE device.
 - `commands` (list): Configuration commands to send
 
 **Returns:** Configuration results and save status
-
-### Tool: show_version
-
-Get device version information.
-
-**Parameters:**
-- `host` (string): Device IP address or hostname  
-- `username` (string): SSH username
-- `password` (string): SSH password
-
-**Returns:** Version output as string
-
-### Tool: show_interfaces  
-
-Get interface status information.
-
-**Parameters:**
-- `host` (string): Device IP address or hostname
-- `username` (string): SSH username  
-- `password` (string): SSH password
-
-**Returns:** Interface status as string
-
-### Tool: show_routing_table
-
-Get routing table information.
-
-**Parameters:**
-- `host` (string): Device IP address or hostname
-- `username` (string): SSH username
-- `password` (string): SSH password  
-
-**Returns:** Routing table as string
-
-### Tool: show_running_config
-
-Get running configuration.
-
-**Parameters:**
-- `host` (string): Device IP address or hostname
-- `username` (string): SSH username
-- `password` (string): SSH password
-
-**Returns:** Running configuration as string
 
 ## License
 

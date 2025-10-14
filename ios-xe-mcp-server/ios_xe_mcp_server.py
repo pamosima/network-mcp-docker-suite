@@ -87,65 +87,6 @@ def config_command(host: str, username: str, password: str, commands: list[str])
         logger.error(error_msg)
         return error_msg
 
-@mcp.tool()
-def show_version(host: str, username: str, password: str) -> str:
-    """
-    Retrieves version information from an IOS XE device.
-    
-    Args:
-        host: IP address or hostname of the IOS XE device
-        username: SSH login username
-        password: SSH login password
-        
-    Returns:
-        Version information as string or error message
-    """
-    return show_command(host, username, password, "show version")
-
-@mcp.tool()
-def show_interfaces(host: str, username: str, password: str) -> str:
-    """
-    Retrieves interface status from an IOS XE device.
-    
-    Args:
-        host: IP address or hostname of the IOS XE device
-        username: SSH login username
-        password: SSH login password
-        
-    Returns:
-        Interface information as string or error message
-    """
-    return show_command(host, username, password, "show ip interface brief")
-
-@mcp.tool()
-def show_routing_table(host: str, username: str, password: str) -> str:
-    """
-    Retrieves routing table from an IOS XE device.
-    
-    Args:
-        host: IP address or hostname of the IOS XE device
-        username: SSH login username  
-        password: SSH login password
-        
-    Returns:
-        Routing table as string or error message
-    """
-    return show_command(host, username, password, "show ip route")
-
-@mcp.tool()
-def show_running_config(host: str, username: str, password: str) -> str:
-    """
-    Retrieves running configuration from an IOS XE device.
-    
-    Args:
-        host: IP address or hostname of the IOS XE device
-        username: SSH login username
-        password: SSH login password
-        
-    Returns:
-        Running configuration as string or error message
-    """
-    return show_command(host, username, password, "show running-config")
 
 # Start Server (SSE Mode for LibreChat integration)
 if __name__ == "__main__":
