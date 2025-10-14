@@ -123,3 +123,44 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+  ios-xe-mcp-server:
+    build:
+      context: ./ios-xe-mcp-server
+      dockerfile: Dockerfile
+    container_name: ios-xe-mcp-server
+    restart: unless-stopped
+    
+    # Load environment variables from .env file (optional)
+    env_file:
+      - ./ios-xe-mcp-server/.env
+    
+    # Environment variables (override any from .env file if needed)
+    environment:
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=8003
+      
+    # Port mapping: host:container
+    ports:
+      - "8003:8003"
+    
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+    
+    # Resource limits (optional, adjust as needed)
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

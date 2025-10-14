@@ -1,14 +1,15 @@
 # 🐳 Multi-MCP Server - Docker Deployment
 
-Multi-MCP Server implementation providing Cisco Meraki Dashboard API, NetBox DCIM/IPAM, and Cisco Catalyst Center functionality through Model Context Protocol (MCP) servers. This project enables seamless integration with LibreChat and other MCP-compatible applications for comprehensive network management and infrastructure documentation.
+Multi-MCP Server implementation providing Cisco Meraki Dashboard API, NetBox DCIM/IPAM, Cisco Catalyst Center, and IOS XE device management functionality through Model Context Protocol (MCP) servers. This project enables seamless integration with LibreChat and other MCP-compatible applications for comprehensive network management and infrastructure documentation.
 
 ## 📋 Description
 
-This repository contains three production-ready MCP servers designed for Cisco DevNet community use:
+This repository contains four production-ready MCP servers designed for Cisco DevNet community use:
 
 - **Meraki MCP Server**: Provides comprehensive access to Cisco Meraki Dashboard API functionality including device management, network monitoring, and configuration operations
 - **NetBox MCP Server**: Enables complete NetBox DCIM/IPAM capabilities for infrastructure documentation, IP address management, and device lifecycle tracking
 - **Catalyst Center MCP Server**: Delivers full Cisco Catalyst Center (DNA Center) functionality including network device management, site topology, client analytics, and network assurance
+- **IOS XE MCP Server**: Enables direct SSH-based management of Cisco IOS XE devices including configuration changes, monitoring commands, and device information retrieval
 
 All servers are containerized using Docker with flexible deployment profiles, designed for easy integration with LibreChat and supporting role-based access control and production-grade security features.
 
@@ -16,7 +17,7 @@ All servers are containerized using Docker with flexible deployment profiles, de
 
 Network administrators and DevOps teams need streamlined access to network infrastructure data and management capabilities. This solution provides:
 
-- **Unified Network Management**: Single interface for Meraki cloud, on-premises NetBox systems, and Catalyst Center management
+- **Unified Network Management**: Single interface for Meraki cloud, on-premises NetBox systems, Catalyst Center management, and direct IOS-XE device control
 - **Automated Documentation**: Real-time synchronization between network devices and documentation systems  
 - **Role-Based Operations**: Granular access control for different operational teams (NOC, SysAdmin, etc.)
 - **Integration Ready**: MCP protocol compatibility enables integration with AI assistants and automation platforms
@@ -38,6 +39,7 @@ Network administrators and DevOps teams need streamlined access to network infra
 - Valid Meraki Dashboard API key
 - NetBox instance with API access (for NetBox MCP Server)
 - Cisco Catalyst Center with credentials (for Catalyst Center MCP Server)
+- Cisco IOS XE device with SSH access (for IOS XE MCP Server)
 
 ### 🚀 Quick Start
 
@@ -67,6 +69,10 @@ nano netbox-mcp-server/.env
 # For Catalyst Center MCP server (if using --profile catc or --profile all)
 cp catc-mcp-server/.env.example catc-mcp-server/.env
 nano catc-mcp-server/.env
+
+# For IOS XE MCP server (if using --profile ios-xe or --profile all)
+cp ios-xe-mcp-server/.env.example ios-xe-mcp-server/.env
+nano ios-xe-mcp-server/.env
 ```
 
 > 💡 **Tip**: Only configure the `.env` files for the servers you plan to deploy. For example, if you only need Meraki integration, you only need to configure `meraki-mcp-server/.env`.
@@ -90,6 +96,17 @@ NETBOX_TOKEN=your_netbox_token_here
 CATC_URL=https://dnac.example.com
 CATC_USERNAME=your_catalyst_center_username
 CATC_PASSWORD=your_catalyst_center_password
+```
+
+**ios-xe-mcp-server/.env:**
+```bash
+# Optional default device settings (credentials can also be provided per API request)
+IOS_XE_HOST=192.168.1.1
+IOS_XE_USERNAME=admin
+IOS_XE_PASSWORD=your_device_password
+MCP_HOST=0.0.0.0
+MCP_PORT=8003
+LOG_LEVEL=INFO
 ```
 
 #### 3. Optional: Configure Custom Networks
@@ -129,6 +146,7 @@ docker-compose ps
 ./deploy.sh start meraki        # Deploy only Meraki
 ./deploy.sh start netbox        # Deploy only NetBox  
 ./deploy.sh start catc          # Deploy only Catalyst Center
+./deploy.sh start ios-xe        # Deploy only IOS XE
 ./deploy.sh start management    # Deploy Meraki + Catalyst Center
 ./deploy.sh start docs          # Deploy NetBox + Catalyst Center
 
@@ -151,6 +169,9 @@ curl http://localhost:8001/health
 
 # Test Catalyst Center MCP Server
 curl http://localhost:8002/health
+
+# Test IOS XE MCP Server
+curl http://localhost:8003/health
 ```
 
 ## 🎯 Deployment Options
@@ -161,11 +182,12 @@ By default, `docker-compose up -d` will start all MCP servers. For selective dep
 
 | Profile | Description | Servers Deployed |
 |---------|-------------|------------------|
-| `all` | Deploy all servers | Meraki + NetBox + Catalyst Center |
+| `all` | Deploy all servers | Meraki + NetBox + Catalyst Center + IOS XE |
 | `meraki` | Deploy only Meraki server | Meraki MCP Server |
 | `netbox` | Deploy only NetBox server | NetBox MCP Server |
 | `catc` or `catalyst` | Deploy only Catalyst Center server | Catalyst Center MCP Server |
-| `management` | Deploy network management servers | Meraki + Catalyst Center |
+| `ios-xe` | Deploy only IOS XE server | IOS XE MCP Server |
+| `management` | Deploy network management servers | Meraki + Catalyst Center + IOS XE |
 | `docs` | Deploy documentation-focused servers | NetBox + Catalyst Center |
 
 ### Deployment Examples
@@ -178,7 +200,8 @@ docker-compose down                          # Stop all servers
 # Selective deployment using convenience script
 ./deploy.sh start all                        # Start all servers
 ./deploy.sh start meraki                     # Start only Meraki
-./deploy.sh start management                 # Start Meraki + Catalyst Center
+./deploy.sh start ios-xe                     # Start only IOS XE
+./deploy.sh start management                 # Start Meraki + Catalyst Center + IOS XE
 ./deploy.sh start docs                       # Start NetBox + Catalyst Center
 
 # Management operations
@@ -220,6 +243,7 @@ All MCP servers provide standardized endpoints for integration:
 - **Meraki MCP Server**: `http://localhost:8000` (or `http://meraki-mcp-server:8000` within Docker network)
 - **NetBox MCP Server**: `http://localhost:8001` (or `http://netbox-mcp-server:8001` within Docker network)
 - **Catalyst Center MCP Server**: `http://localhost:8002` (or `http://catc-mcp-server:8002` within Docker network)
+- **IOS XE MCP Server**: `http://localhost:8003` (or `http://ios-xe-mcp-server:8003` within Docker network)
 
 ### ⚙️ Configuration Options
 
@@ -251,6 +275,16 @@ All MCP servers provide standardized endpoints for integration:
 | `CATC_PASSWORD` | Catalyst Center password | - | ✅ Yes |
 | `CATC_MCP_PORT` | Host port mapping for Catalyst Center server | `8002` | No |
 
+#### IOS XE MCP Server Variables:
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `MCP_HOST` | Server bind host | `0.0.0.0` | No |
+| `MCP_PORT` | Server port | `8003` | No |
+| `LOG_LEVEL` | Logging level | `INFO` | No |
+
+> **Note**: IOS XE MCP Server does not require stored credentials. Device credentials (host, username, password) are provided with each API call for enhanced security.
+
 ### Access Control Roles
 
 - **`noc`**: Network Operations Center - monitoring + firmware upgrades
@@ -267,11 +301,13 @@ docker-compose up -d                             # All servers
 docker-compose up -d meraki-mcp-servers          # Meraki only
 docker-compose up -d netbox-mcp-server           # NetBox only
 docker-compose up -d catc-mcp-server             # Catalyst Center only
+docker-compose up -d ios-xe-mcp-server           # IOS XE only
 
 # Stop services
 docker-compose down                              # All servers
 docker-compose stop meraki-mcp-servers          # Meraki only
 docker-compose stop netbox-mcp-server           # NetBox only
+docker-compose stop ios-xe-mcp-server           # IOS XE only
 
 # Restart services
 docker-compose restart                           # All servers
@@ -353,6 +389,8 @@ services:
     networks: ['demo']
   catc-mcp-server:
     networks: ['demo']
+  ios-xe-mcp-server:
+    networks: ['demo']
 networks:
   demo:
     external: true
@@ -412,6 +450,10 @@ networks:
      CatC-MCP-Server:
        type: sse
        url: http://catc-mcp-server:8002/sse
+       timeout: 60000
+     IOS-XE-MCP-Server:
+       type: sse
+       url: http://ios-xe-mcp-server:8003/sse
        timeout: 60000
    ```
 

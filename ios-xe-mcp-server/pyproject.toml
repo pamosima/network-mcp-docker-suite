@@ -1,0 +1,11 @@
+[project]
+name = "ios-xe-mcp-server"
+version = "0.1.0"
+description = "IOS XE MCP server for LibreChat integration"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastmcp>=2.10.6",
+    "netmiko>=4.3.0",
+    "uvicorn>=0.35.0",
+]
