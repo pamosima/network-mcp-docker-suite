@@ -1,9 +1,19 @@
 # 🌐 Network MCP Docker Suite
 
+[![published](https://static.production.devnetcloud.com/codeexchange/assets/images/devnet-published.svg)](https://developer.cisco.com/codeexchange/github/repo/pamosima/network-mcp-docker-suite)
+
 > **📚 Example Code for Learning & Development**  
 > This is a demonstration project showcasing MCP server implementations for network management. Intended for educational purposes, testing, and development environments.
 
 A comprehensive Docker-based suite of Model Context Protocol (MCP) servers for network infrastructure management. This example implementation provides Cisco Meraki Dashboard API, NetBox DCIM/IPAM, Cisco Catalyst Center, and IOS XE device management through containerized MCP servers. Designed for demonstration, learning, and integration with MCP clients like Cursor, LibreChat, and other MCP-enabled applications.
+
+## 🎬 Live Demo
+
+AI-Powered Network Troubleshooting with LibreChat using Multiple MCP Servers
+
+![Catalyst Center MCP Demo](img/CatC-MCP_demo.gif)
+
+*Watch how natural language queries automatically investigate and resolve network issues using both Catalyst Center MCP Server and IOS XE MCP Server. The AI assistant correlates data from management systems (Catalyst Center) with direct device access (IOS XE SSH) to identify root causes and provide comprehensive solutions.*
 
 ## 📋 Description
 
@@ -18,12 +28,47 @@ All servers are containerized using Docker with flexible deployment profiles, de
 
 ## 🎯 Use Case
 
-Network administrators and DevOps teams need streamlined access to network infrastructure data and management capabilities. This solution provides:
+Network administrators and DevOps teams face significant challenges in managing modern hybrid network infrastructure across cloud and on-premises environments. This solution addresses these challenges by providing:
 
-- **Unified Network Management**: Single interface for Meraki cloud, on-premises NetBox systems, Catalyst Center management, and direct IOS-XE device control
-- **Automated Documentation**: Real-time synchronization between network devices and documentation systems  
-- **Role-Based Operations**: Granular access control for different operational teams (NOC, SysAdmin, etc.)
-- **Integration Ready**: MCP protocol compatibility enables integration with AI assistants and automation platforms
+### 🚀 Primary Use Cases
+
+#### 1. **Unified Network Operations** 🌐
+- **Single Interface**: Manage Meraki cloud networks, on-premises NetBox DCIM/IPAM, Catalyst Center infrastructure, and direct IOS-XE devices through one MCP protocol interface
+- **Streamlined Workflows**: Reduce context switching between multiple network management tools and dashboards
+- **Cross-Platform Visibility**: Correlate data across different network management systems for comprehensive operational insights
+
+#### 2. **AI-Powered Network Management** 🤖
+- **Natural Language Queries**: Use AI assistants (Cursor, LibreChat) to query network infrastructure using plain English
+- **Automated Troubleshooting**: Enable AI-driven network issue diagnosis by providing unified access to network data
+- **Intelligent Documentation**: Generate automated reports combining real-time network state with infrastructure documentation
+
+#### 3. **DevOps Integration & Automation** ⚙️
+- **Infrastructure as Code**: Programmatic access to network infrastructure for automation workflows
+- **CI/CD Integration**: Embed network management capabilities into deployment pipelines
+- **Configuration Management**: Standardized API access for network device configuration and monitoring
+
+#### 4. **Operational Efficiency** 📈
+- **Role-Based Access**: Granular permissions for NOC teams (monitoring + firmware), SysAdmins (read-only), and full API access
+- **Audit Trail**: Comprehensive logging of all network management operations for compliance
+- **Real-Time Synchronization**: Automated synchronization between network devices and documentation systems
+
+### 🎯 Target Scenarios
+
+| Scenario | Description | Servers Used | Benefits |
+|----------|-------------|--------------|----------|
+| **Network Troubleshooting** | NOC engineer investigating connectivity issues (as shown in demo) | Catalyst Center + IOS-XE | Cross-platform correlation of management data with direct device access |
+| **Infrastructure Documentation** | SysAdmin updating network documentation | NetBox + Catalyst Center | Automated documentation synchronization |
+| **Compliance Reporting** | IT Manager generating audit reports | All servers | Consolidated reporting across infrastructure |
+| **Device Configuration** | Network engineer deploying configurations | Catalyst Center + IOS-XE | Standardized configuration management |
+
+### 📚 Detailed Documentation
+
+For comprehensive use case scenarios and implementation details, see:
+
+- **📖 [Detailed Use Case Analysis](USECASE.md)** - Complete business case, technical scenarios, and success metrics
+- **🔧 [IOS XE Server Guide](ios-xe-mcp-server/README.md)** - Specific documentation for direct device management capabilities
+- **🤝 [Contributing Guidelines](CONTRIBUTING.md)** - How to extend use cases and add new functionality
+
 
 ## 🧩 Solution Components
 
@@ -232,6 +277,69 @@ chmod +x deploy.sh
 ```
 
 ## 💻 Usage
+
+### 🤖 Example Prompts
+
+Here's a real-world example of how to interact with the MCP servers using natural language in AI assistants like Cursor or LibreChat:
+
+#### **Network Troubleshooting Example**
+
+**User Prompt:**
+```
+Check why wlsn-access-1.dna.its-best.ch is unreachable from Cisco Catalyst Center.
+```
+
+**AI Assistant Response:**
+The AI assistant automatically uses both MCP servers working together to investigate:
+
+1. **Catalyst Center MCP Server** - Checks device status and issues:
+   ```
+   🔴 Status: Unreachable (Priority P1 Active Issue)
+   Device: Cisco Catalyst 9300-48UXM Switch
+   IP: 10.10.254.166 (expected)
+   Error: SNMP Connectivity Failed
+   ```
+
+2. **IOS XE MCP Server** - Direct SSH access to verify physical layer:
+   ```python
+   show_command("show cdp neighbors detail", "10.10.254.161")
+   show_command("show arp | include 10.10.254", "10.10.254.161")
+   # Discovers device is actually on 10.10.254.165, not .166
+   ```
+
+3. **Multi-Server Correlation** - AI correlates management system data with direct device access:
+   ```
+   ✅ Device is UP and operational (4 days uptime via SSH)
+   ✅ Physical connectivity confirmed via CDP from border switch
+   ✅ ARP table shows device at .165, not .166
+   ❌ IP address mismatch: Catalyst Center expects .166, device actually at .165
+   
+   Root Cause: Management IP mismatch in Catalyst Center inventory
+   ```
+
+**Resolution Provided:**
+- Update Catalyst Center device IP from 10.10.254.166 → 10.10.254.165
+- Verify SNMP credentials match
+- Re-sync device in Catalyst Center
+
+#### **More Example Prompts**
+
+| Scenario | Example Prompt | MCP Servers Used |
+|----------|----------------|------------------|
+| **Device Configuration** | *"Configure VLAN 100 on all access switches in Building A"* | Catalyst Center + IOS XE |
+| **Network Health Check** | *"Show me the health status of all Meraki devices and any recent alerts"* | Meraki MCP Server |
+| **Infrastructure Audit** | *"Generate a report of all devices in NetBox that don't match Catalyst Center inventory"* | NetBox + Catalyst Center |
+| **Security Compliance** | *"Check which devices have outdated firmware and create a compliance report"* | All servers |
+| **Capacity Planning** | *"Show me bandwidth utilization trends for the last 30 days across all sites"* | Meraki + Catalyst Center |
+
+#### **AI Integration Benefits**
+
+- **🧠 Natural Language**: Ask questions in plain English instead of learning complex APIs
+- **🔍 Cross-Platform Correlation**: AI automatically queries multiple systems to provide comprehensive answers
+- **📊 Intelligent Analysis**: AI correlates data from different sources to identify root causes
+- **⚡ Rapid Troubleshooting**: Get detailed technical analysis in seconds instead of manual investigation
+- **📝 Automated Documentation**: Generate reports combining real-time data with infrastructure documentation
+- **✅ Real Working Example**: The demo above shows actual production data from both Catalyst Center and direct IOS XE device access being analyzed through LibreChat
 
 ### 🌐 Server Endpoints
 
