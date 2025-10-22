@@ -266,26 +266,6 @@ def get_device_health(device_id: str) -> Dict[str, Any]:
     return catc_api.get(f"/device-health/{device_id}")
 
 @mcp.tool()
-def get_issues(priority: Optional[str] = None, status: Optional[str] = None) -> Dict[str, Any]:
-    """
-    Get network issues from Catalyst Center
-    
-    Args:
-        priority: Optional priority filter (P1, P2, P3, P4)
-        status: Optional status filter (ACTIVE, RESOLVED)
-    
-    Returns:
-        Dict containing network issues
-    """
-    params = {}
-    if priority:
-        params['priority'] = priority
-    if status:
-        params['status'] = status
-        
-    return catc_api.get("/issues", params=params)
-
-@mcp.tool()
 def get_templates() -> Dict[str, Any]:
     """
     Get configuration templates from Catalyst Center
@@ -309,25 +289,180 @@ def get_compliance_detail(device_id: str) -> Dict[str, Any]:
     return catc_api.get(f"/compliance/{device_id}/detail")
 
 @mcp.tool()
-def get_events(category: Optional[str] = None, severity: Optional[str] = None, limit: int = 100) -> Dict[str, Any]:
+def get_assurance_issues(
+    priority: Optional[str] = None,
+    status: Optional[str] = None,
+    severity: Optional[str] = None,
+    issue_id: Optional[str] = None,
+    network_device_id: Optional[str] = None,
+    site_id: Optional[str] = None,
+    category: Optional[str] = None,
+    device_type: Optional[str] = None,
+    name: Optional[str] = None,
+    start_time: Optional[int] = None,
+    end_time: Optional[int] = None,
+    limit: int = 25,
+    offset: int = 1,
+    is_global: Optional[bool] = None
+) -> Dict[str, Any]:
     """
-    Get events from Catalyst Center
+    Get detailed assurance issues from Catalyst Center
+    
+    Returns all details of each issue along with suggested actions for given set of filters.
+    Supports wildcard search (*) for string parameters.
+    Reference: https://developer.cisco.com/docs/dna-center/2-3-7-9/issues-get-the-details-of-issues-for-given-set-of-filters/
     
     Args:
-        category: Optional event category filter
-        severity: Optional severity filter (INFO, WARN, ERROR, ALERT, CRITICAL)
-        limit: Maximum number of events to return (default: 100)
+        priority: Priority filter (P1, P2, P3, P4). Examples: 'P1' or 'P1&priority=P2'
+        status: Status filter (active, resolved). Examples: 'active' or 'active&status=resolved'
+        severity: Severity filter (high, medium, low)
+        issue_id: Specific issue ID to retrieve
+        network_device_id: Network device UUID to filter issues by device
+        site_id: Site ID/UUID to filter issues by site
+        category: Issue category (availability, onboarding, performance, connectivity, etc.)
+        device_type: Device type (Wireless Controller, Switches and Hubs, Routers, etc.)
+        name: Issue name (supports wildcard *)
+        start_time: Start time in UNIX epoch milliseconds (inclusive)
+        end_time: End time in UNIX epoch milliseconds (inclusive)
+        limit: Maximum number of issues to return (default: 25)
+        offset: Starting point within all records, 1-based (default: 1)
+        is_global: If True, only global issues. If False, all issues. If None, not filtered.
     
     Returns:
-        Dict containing event information
+        Dict containing detailed assurance issue information with suggested actions
     """
-    params = {"limit": limit}
-    if category:
-        params['category'] = category
+    # Build the full URL for the data API endpoint
+    url = f"{catc_api.base_url}/dna/data/api/v1/assuranceIssues"
+    headers = catc_api._get_headers()
+    
+    # Build query parameters according to API spec
+    params = {
+        "limit": limit,
+        "offset": offset
+    }
+    
+    if priority:
+        params['priority'] = priority
+    if status:
+        params['status'] = status
     if severity:
         params['severity'] = severity
+    if issue_id:
+        params['issueId'] = issue_id
+    if network_device_id:
+        params['networkDeviceId'] = network_device_id
+    if site_id:
+        params['siteId'] = site_id
+    if category:
+        params['category'] = category
+    if device_type:
+        params['deviceType'] = device_type
+    if name:
+        params['name'] = name
+    if start_time:
+        params['startTime'] = start_time
+    if end_time:
+        params['endTime'] = end_time
+    if is_global is not None:
+        params['isGlobal'] = str(is_global).lower()
+    
+    try:
+        response = catc_api.session.get(url, headers=headers, params=params, verify=False)
+        if response.status_code == 401:
+            # Token expired, re-authenticate
+            if catc_api.authenticate():
+                headers = catc_api._get_headers()
+                response = catc_api.session.get(url, headers=headers, params=params, verify=False)
         
-    return catc_api.get("/events", params=params)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        print(f"❌ API Error: {e}")
+        raise
+
+@mcp.tool()
+def resolve_issues(issue_ids: List[str]) -> Dict[str, Any]:
+    """
+    Resolve the given list of issues in Catalyst Center
+    
+    This tool marks one or more issues as resolved in Catalyst Center.
+    You can get issue IDs from the get_assurance_issues tool.
+    Reference: https://developer.cisco.com/docs/dna-center/resolve-the-given-lists-of-issues/
+    
+    Args:
+        issue_ids: List of issue IDs to resolve (e.g., ['issue-uuid-1', 'issue-uuid-2'])
+    
+    Returns:
+        Dict containing the resolution operation result
+    
+    Example:
+        # First, get issues to find their IDs
+        issues = get_assurance_issues(status="active", priority="P1")
+        issue_ids = [issue['issueId'] for issue in issues['response']]
+        
+        # Then resolve specific issues
+        result = resolve_issues(issue_ids=issue_ids)
+    """
+    if not issue_ids or len(issue_ids) == 0:
+        return {
+            "error": "No issue IDs provided",
+            "message": "Please provide at least one issue ID to resolve"
+        }
+    
+    # Build the full URL for the resolve endpoint
+    url = f"{catc_api.base_url}/dna/intent/api/v1/assuranceIssues/resolve"
+    headers = catc_api._get_headers()
+    
+    # Build the request payload - Catalyst Center expects an array of issue IDs
+    payload = {
+        "issueIds": issue_ids
+    }
+    
+    try:
+        response = catc_api.session.post(url, headers=headers, json=payload, verify=False)
+        if response.status_code == 401:
+            # Token expired, re-authenticate
+            if catc_api.authenticate():
+                headers = catc_api._get_headers()
+                response = catc_api.session.post(url, headers=headers, json=payload, verify=False)
+        
+        response.raise_for_status()
+        result = response.json()
+        
+        # Extract successful and failed issue IDs from response
+        successful_ids = result.get('response', {}).get('successfulIssueIds', [])
+        failed_ids = result.get('response', {}).get('failureIssueIds', [])
+        
+        return {
+            "status": "success",
+            "message": f"Resolved {len(successful_ids)} issue(s), {len(failed_ids)} failed",
+            "successful_issue_ids": successful_ids,
+            "failed_issue_ids": failed_ids,
+            "response": result
+        }
+    except requests.exceptions.HTTPError as e:
+        error_message = f"Failed to resolve issues: {e}"
+        if hasattr(e, 'response') and e.response is not None:
+            try:
+                error_detail = e.response.json()
+                error_message = f"Failed to resolve issues: {error_detail}"
+            except:
+                error_message = f"Failed to resolve issues: {e.response.text}"
+        
+        print(f"❌ API Error: {error_message}")
+        return {
+            "status": "error",
+            "message": error_message,
+            "issue_ids": issue_ids
+        }
+    except Exception as e:
+        error_message = f"Unexpected error: {e}"
+        print(f"❌ {error_message}")
+        return {
+            "status": "error",
+            "message": error_message,
+            "issue_ids": issue_ids
+        }
 
 if __name__ == "__main__":
     print("🚀 Starting Catalyst Center MCP Server...")
