@@ -102,7 +102,8 @@ class CatalystCenterAPI:
         credentials = base64.b64encode(f"{self.username}:{self.password}".encode()).decode()
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Basic {credentials}"
+            "Authorization": f"Basic {credentials}",
+            "User-Agent": "Network-MCP-Server/1.0 pamosima"
         }
         
         try:
