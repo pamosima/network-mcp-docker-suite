@@ -183,7 +183,11 @@ class MerakiResponseFixingClient:
 # Create the base HTTP client for Meraki API
 base_client = httpx.AsyncClient(
     base_url="https://api.meraki.com/api/v1",
-    headers={"X-Cisco-Meraki-API-Key": api_key, "Content-Type": "application/json"},
+    headers={
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+        "User-Agent": "Network-MCP-Server/1.0 pamosima"
+    },
     timeout=30,
 )
 
