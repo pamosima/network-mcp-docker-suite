@@ -5,7 +5,7 @@
 > **📚 Example Code for Learning & Development**  
 > This is a demonstration project showcasing MCP server implementations for network management. Intended for educational purposes, testing, and development environments.
 
-A comprehensive Docker-based suite of Model Context Protocol (MCP) servers for network infrastructure management. This example implementation provides Cisco Meraki Dashboard API, NetBox DCIM/IPAM, Cisco Catalyst Center, Cisco ThousandEyes, and IOS XE device management through containerized MCP servers. Designed for demonstration, learning, and integration with MCP clients like Cursor, LibreChat, and other MCP-enabled applications.
+A comprehensive Docker-based suite of Model Context Protocol (MCP) servers for network infrastructure management. This example implementation provides Cisco Meraki Dashboard API, NetBox DCIM/IPAM, Cisco Catalyst Center, Cisco ThousandEyes, Cisco ISE, and IOS XE device management through containerized MCP servers. Designed for demonstration, learning, and integration with MCP clients like Cursor, LibreChat, and other MCP-enabled applications.
 
 ## 🎬 Live Demo
 
@@ -17,12 +17,13 @@ AI-Powered Network Troubleshooting with LibreChat using Multiple MCP Servers
 
 ## 📋 Description
 
-This Docker suite contains five example MCP servers for comprehensive network infrastructure management:
+This Docker suite contains six example MCP servers for comprehensive network infrastructure management:
 
 - **Meraki MCP Server**: Provides comprehensive access to Cisco Meraki Dashboard API functionality including device management, network monitoring, and configuration operations
 - **NetBox MCP Server**: Enables complete NetBox DCIM/IPAM capabilities for infrastructure documentation, IP address management, and device lifecycle tracking
 - **Catalyst Center MCP Server**: Delivers full Cisco Catalyst Center functionality including network device management, site topology, client analytics, and network assurance
 - **ThousandEyes MCP Server**: Provides comprehensive access to Cisco ThousandEyes v7 API for network performance monitoring, path visualization, dashboard data, and alert management
+- **ISE MCP Server**: Provides comprehensive access to Cisco Identity Services Engine (ISE) for network access control, policy management, user/device identity, and security operations
 - **IOS XE MCP Server**: Enables direct SSH-based management of Cisco IOS XE devices including configuration changes, monitoring commands, and device information retrieval
 
 All servers are containerized using Docker with flexible deployment profiles, designed for development, testing, and demonstration environments with seamless integration across MCP clients.
@@ -91,6 +92,7 @@ For comprehensive use case scenarios and implementation details, see:
 - NetBox instance with API access (for NetBox MCP Server)
 - Cisco Catalyst Center with credentials (for Catalyst Center MCP Server)
 - Cisco ThousandEyes with API v7 Bearer token (for ThousandEyes MCP Server)
+- Cisco ISE with ERS API enabled and credentials (for ISE MCP Server)
 - Cisco IOS XE device with SSH access (for IOS XE MCP Server)
 
 ### 🚀 Quick Start
@@ -126,6 +128,10 @@ nano catc-mcp-server/.env
 cp thousandeyes-mcp-server/.env.example thousandeyes-mcp-server/.env
 nano thousandeyes-mcp-server/.env
 
+# For ISE MCP server (if using --profile ise or --profile all)
+cp ise-mcp-server/.env.example ise-mcp-server/.env
+nano ise-mcp-server/.env
+
 # For IOS XE MCP server (if using --profile ios-xe or --profile all)
 cp ios-xe-mcp-server/.env.example ios-xe-mcp-server/.env
 nano ios-xe-mcp-server/.env
@@ -158,6 +164,14 @@ CATC_PASSWORD=your_catalyst_center_password
 ```bash
 TE_TOKEN=your_thousandeyes_api_bearer_token_here
 TE_BASE_URL=https://api.thousandeyes.com/v7
+```
+
+**ise-mcp-server/.env:**
+```bash
+ISE_HOST=ise.company.com
+ISE_USERNAME=your_ise_username
+ISE_PASSWORD=your_ise_password
+ISE_VERIFY_SSL=False
 ```
 
 **ios-xe-mcp-server/.env:**
@@ -228,6 +242,8 @@ curl http://localhost:8000/mcp    # Meraki MCP Server
 curl http://localhost:8001/mcp    # NetBox MCP Server  
 curl http://localhost:8002/mcp    # Catalyst Center MCP Server
 curl http://localhost:8003/mcp    # IOS XE MCP Server
+curl http://localhost:8004/mcp    # ThousandEyes MCP Server
+curl http://localhost:8005/mcp    # ISE MCP Server
 ```
 
 ## 🎯 Deployment Options
@@ -238,14 +254,16 @@ By default, `docker-compose up -d` will start all MCP servers. For selective dep
 
 | Profile | Description | Servers Deployed |
 |---------|-------------|------------------|
-| `all` | Deploy all servers | Meraki + NetBox + Catalyst Center + ThousandEyes + IOS XE |
+| `all` | Deploy all servers | Meraki + NetBox + Catalyst Center + ThousandEyes + ISE + IOS XE |
 | `meraki` | Deploy only Meraki server | Meraki MCP Server |
 | `netbox` | Deploy only NetBox server | NetBox MCP Server |
 | `catc` or `catalyst` | Deploy only Catalyst Center server | Catalyst Center MCP Server |
 | `thousandeyes` or `te` | Deploy only ThousandEyes server | ThousandEyes MCP Server |
+| `ise` | Deploy only ISE server | ISE MCP Server |
 | `ios-xe` | Deploy only IOS XE server | IOS XE MCP Server |
-| `cisco` | Deploy Cisco-focused servers | Meraki + Catalyst Center + ThousandEyes + IOS XE |
+| `cisco` | Deploy Cisco-focused servers | Meraki + Catalyst Center + ThousandEyes + ISE + IOS XE |
 | `network` | Deploy network management servers | Meraki + ThousandEyes + IOS XE |
+| `security` | Deploy security-focused servers | Catalyst Center + ISE |
 | `monitoring` | Deploy network monitoring servers | Meraki + Catalyst Center + ThousandEyes |
 | `management` | Deploy traditional management servers | Meraki + Catalyst Center |
 | `docs` | Deploy documentation-focused servers | NetBox + Catalyst Center |
@@ -286,7 +304,9 @@ chmod +x deploy.sh
 ./deploy.sh start all          # Start all servers
 ./deploy.sh start meraki       # Start only Meraki
 ./deploy.sh start thousandeyes # Start only ThousandEyes
+./deploy.sh start ise          # Start only ISE
 ./deploy.sh start cisco        # Start Cisco-focused servers
+./deploy.sh start security     # Start security-focused servers
 ./deploy.sh start monitoring   # Start network monitoring servers
 ./deploy.sh start management   # Start traditional management servers
 ./deploy.sh start docs         # Start NetBox + Catalyst Center
@@ -354,6 +374,7 @@ The AI assistant automatically uses both MCP servers working together to investi
 | **Device Configuration** | *"Configure VLAN 100 on all access switches in Building A"* | Catalyst Center + IOS XE |
 | **Network Health Check** | *"Show me the health status of all Meraki devices and any recent alerts"* | Meraki MCP Server |
 | **Performance Analysis** | *"Show me network latency and path visualization for our main website over the last 6 hours"* | ThousandEyes MCP Server |
+| **Security Compliance** | *"Show me all non-compliant devices in ISE and their current authorization profiles"* | ISE MCP Server |
 | **Infrastructure Audit** | *"Generate a report of all devices in NetBox that don't match Catalyst Center inventory"* | NetBox + Catalyst Center |
 | **Security Compliance** | *"Check which devices have outdated firmware and create a compliance report"* | All servers |
 | **Capacity Planning** | *"Show me bandwidth utilization trends for the last 30 days across all sites"* | Meraki + Catalyst Center |
@@ -376,6 +397,7 @@ All MCP servers provide standardized endpoints for integration:
 - **Catalyst Center MCP Server**: `http://localhost:8002/mcp` (or `http://catc-mcp-server:8002/mcp` within Docker network)
 - **IOS XE MCP Server**: `http://localhost:8003/mcp` (or `http://ios-xe-mcp-server:8003/mcp` within Docker network)
 - **ThousandEyes MCP Server**: `http://localhost:8004/mcp` (or `http://thousandeyes-mcp-server:8004/mcp` within Docker network)
+- **ISE MCP Server**: `http://localhost:8005/mcp` (or `http://ise-mcp-server:8005/mcp` within Docker network)
 
 ### ⚙️ Configuration Options
 
@@ -508,9 +530,9 @@ docker-compose logs meraki-mcp-server > meraki-server.log
 
 | **MCP Client** | **Configuration File** | **Port Range** |
 |---|---|---|
-| **Cursor IDE** | `~/.cursor/mcp.json` | 8000-8004 |
-| **LibreChat** | `librechat.yaml` | 8000-8004 |
-| **Custom Client** | HTTP transport to `localhost:PORT/mcp` | 8000-8004 |
+| **Cursor IDE** | `~/.cursor/mcp.json` | 8000-8005 |
+| **LibreChat** | `librechat.yaml` | 8000-8005 |
+| **Custom Client** | HTTP transport to `localhost:PORT/mcp` | 8000-8005 |
 
 ### MCP Client Integration
 
@@ -595,6 +617,10 @@ networks:
        type: streamable-http
        url: http://ios-xe-mcp-server:8003/mcp
        timeout: 60000
+     ISE-MCP-Server:
+       type: streamable-http
+       url: http://ise-mcp-server:8005/mcp
+       timeout: 60000
      ThousandEyes-MCP-Server:
        type: streamable-http
        url: http://thousandeyes-mcp-server:8004/mcp
@@ -634,6 +660,11 @@ For **Cursor IDE**, create or update your `~/.cursor/mcp.json` file:
       "transport": "http",
       "url": "http://localhost:8004/mcp",
       "timeout": 60000
+    },
+    "ISE-MCP-Server": {
+      "transport": "http",
+      "url": "http://localhost:8005/mcp",
+      "timeout": 60000
     }    
   }
 }
@@ -654,6 +685,8 @@ curl http://localhost:8000/mcp    # Meraki MCP Server
 curl http://localhost:8001/mcp    # NetBox MCP Server  
 curl http://localhost:8002/mcp    # Catalyst Center MCP Server
 curl http://localhost:8003/mcp    # IOS XE MCP Server
+curl http://localhost:8004/mcp    # ThousandEyes MCP Server
+curl http://localhost:8005/mcp    # ISE MCP Server
 ```
 
 ### Network Isolation Benefits
@@ -877,6 +910,8 @@ curl -X POST http://localhost:8000/mcp  # Meraki
 curl -X POST http://localhost:8001/mcp  # NetBox
 curl -X POST http://localhost:8002/mcp  # Catalyst Center
 curl -X POST http://localhost:8003/mcp  # IOS XE
+curl -X POST http://localhost:8004/mcp  # ThousandEyes
+curl -X POST http://localhost:8005/mcp  # ISE
 
 # 4. Check all servers are running
 ./deploy.sh status all
@@ -900,6 +935,8 @@ Special thanks to:
 - **tspuhler** for the IOS XE MCP Server implementation, providing direct SSH-based device management capabilities for Cisco IOS XE devices.
 
 - **Aditya Chellam** and **Kiran Kabdal** for the [ThousandEyes MCP Community](https://github.com/CiscoDevNet/thousandeyes-mcp-community) server implementation. The ThousandEyes MCP Server in this suite is based on their comprehensive ThousandEyes v7 API integration.
+
+- **automateyournetwork** (John Capobianco) and **RobertBergman** for the [ISE MCP Server](https://github.com/automateyournetwork/ISE_MCP) implementation. The ISE MCP Server in this suite is based on their comprehensive ISE ERS API integration for network access control and security operations.
 
 ## ⚠️ Disclaimer
 
