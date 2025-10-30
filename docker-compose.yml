@@ -164,3 +164,43 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+  thousandeyes-mcp-server:
+    build:
+      context: ./thousandeyes-mcp-server
+      dockerfile: Dockerfile
+    container_name: thousandeyes-mcp-server
+    restart: unless-stopped
+    
+    # Load environment variables from .env file
+    env_file:
+      - ./thousandeyes-mcp-server/.env
+    
+    # Environment variables (override any from .env file if needed)
+    environment:
+      - MCP_HOST=0.0.0.0
+      
+    # Port mapping: host:container
+    ports:
+      - "8004:8004"
+    
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+    
+    # Resource limits (optional, adjust as needed)
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

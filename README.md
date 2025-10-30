@@ -5,7 +5,7 @@
 > **📚 Example Code for Learning & Development**  
 > This is a demonstration project showcasing MCP server implementations for network management. Intended for educational purposes, testing, and development environments.
 
-A comprehensive Docker-based suite of Model Context Protocol (MCP) servers for network infrastructure management. This example implementation provides Cisco Meraki Dashboard API, NetBox DCIM/IPAM, Cisco Catalyst Center, and IOS XE device management through containerized MCP servers. Designed for demonstration, learning, and integration with MCP clients like Cursor, LibreChat, and other MCP-enabled applications.
+A comprehensive Docker-based suite of Model Context Protocol (MCP) servers for network infrastructure management. This example implementation provides Cisco Meraki Dashboard API, NetBox DCIM/IPAM, Cisco Catalyst Center, Cisco ThousandEyes, and IOS XE device management through containerized MCP servers. Designed for demonstration, learning, and integration with MCP clients like Cursor, LibreChat, and other MCP-enabled applications.
 
 ## 🎬 Live Demo
 
@@ -17,11 +17,12 @@ AI-Powered Network Troubleshooting with LibreChat using Multiple MCP Servers
 
 ## 📋 Description
 
-This Docker suite contains four example MCP servers for comprehensive network infrastructure management:
+This Docker suite contains five example MCP servers for comprehensive network infrastructure management:
 
 - **Meraki MCP Server**: Provides comprehensive access to Cisco Meraki Dashboard API functionality including device management, network monitoring, and configuration operations
 - **NetBox MCP Server**: Enables complete NetBox DCIM/IPAM capabilities for infrastructure documentation, IP address management, and device lifecycle tracking
 - **Catalyst Center MCP Server**: Delivers full Cisco Catalyst Center functionality including network device management, site topology, client analytics, and network assurance
+- **ThousandEyes MCP Server**: Provides comprehensive access to Cisco ThousandEyes v7 API for network performance monitoring, path visualization, dashboard data, and alert management
 - **IOS XE MCP Server**: Enables direct SSH-based management of Cisco IOS XE devices including configuration changes, monitoring commands, and device information retrieval
 
 All servers are containerized using Docker with flexible deployment profiles, designed for development, testing, and demonstration environments with seamless integration across MCP clients.
@@ -56,7 +57,8 @@ Network administrators and DevOps teams face significant challenges in managing 
 
 | Scenario | Description | Servers Used | Benefits |
 |----------|-------------|--------------|----------|
-| **Network Troubleshooting** | NOC engineer investigating connectivity issues (as shown in demo) | Catalyst Center + IOS-XE | Cross-platform correlation of management data with direct device access |
+| **Network Troubleshooting** | NOC engineer investigating connectivity issues (as shown in demo) | Catalyst Center + IOS-XE + ThousandEyes | Cross-platform correlation with performance monitoring |
+| **Performance Analysis** | Network analyst monitoring application performance | ThousandEyes + Catalyst Center | End-to-end performance visibility |
 | **Infrastructure Documentation** | SysAdmin updating network documentation | NetBox + Catalyst Center | Automated documentation synchronization |
 | **Compliance Reporting** | IT Manager generating audit reports | All servers | Consolidated reporting across infrastructure |
 | **Device Configuration** | Network engineer deploying configurations | Catalyst Center + IOS-XE | Standardized configuration management |
@@ -67,6 +69,7 @@ For comprehensive use case scenarios and implementation details, see:
 
 - **📖 [Detailed Use Case Analysis](USECASE.md)** - Complete business case, technical scenarios, and success metrics
 - **🔧 [IOS XE Server Guide](ios-xe-mcp-server/README.md)** - Specific documentation for direct device management capabilities
+- **📊 [ThousandEyes Server Guide](thousandeyes-mcp-server/README.md)** - Comprehensive network performance monitoring and analysis
 - **🤝 [Contributing Guidelines](CONTRIBUTING.md)** - How to extend use cases and add new functionality
 
 
@@ -87,6 +90,7 @@ For comprehensive use case scenarios and implementation details, see:
 - Valid Meraki Dashboard API key
 - NetBox instance with API access (for NetBox MCP Server)
 - Cisco Catalyst Center with credentials (for Catalyst Center MCP Server)
+- Cisco ThousandEyes with API v7 Bearer token (for ThousandEyes MCP Server)
 - Cisco IOS XE device with SSH access (for IOS XE MCP Server)
 
 ### 🚀 Quick Start
@@ -118,6 +122,10 @@ nano netbox-mcp-server/.env
 cp catc-mcp-server/.env.example catc-mcp-server/.env
 nano catc-mcp-server/.env
 
+# For ThousandEyes MCP server (if using --profile thousandeyes or --profile all)
+cp thousandeyes-mcp-server/.env.example thousandeyes-mcp-server/.env
+nano thousandeyes-mcp-server/.env
+
 # For IOS XE MCP server (if using --profile ios-xe or --profile all)
 cp ios-xe-mcp-server/.env.example ios-xe-mcp-server/.env
 nano ios-xe-mcp-server/.env
@@ -144,6 +152,12 @@ NETBOX_TOKEN=your_netbox_token_here
 CATC_URL=https://catalyst-center.example.com
 CATC_USERNAME=your_catalyst_center_username
 CATC_PASSWORD=your_catalyst_center_password
+```
+
+**thousandeyes-mcp-server/.env:**
+```bash
+TE_TOKEN=your_thousandeyes_api_bearer_token_here
+TE_BASE_URL=https://api.thousandeyes.com/v7
 ```
 
 **ios-xe-mcp-server/.env:**
@@ -328,6 +342,7 @@ The AI assistant automatically uses both MCP servers working together to investi
 |----------|----------------|------------------|
 | **Device Configuration** | *"Configure VLAN 100 on all access switches in Building A"* | Catalyst Center + IOS XE |
 | **Network Health Check** | *"Show me the health status of all Meraki devices and any recent alerts"* | Meraki MCP Server |
+| **Performance Analysis** | *"Show me network latency and path visualization for our main website over the last 6 hours"* | ThousandEyes MCP Server |
 | **Infrastructure Audit** | *"Generate a report of all devices in NetBox that don't match Catalyst Center inventory"* | NetBox + Catalyst Center |
 | **Security Compliance** | *"Check which devices have outdated firmware and create a compliance report"* | All servers |
 | **Capacity Planning** | *"Show me bandwidth utilization trends for the last 30 days across all sites"* | Meraki + Catalyst Center |
@@ -349,6 +364,7 @@ All MCP servers provide standardized endpoints for integration:
 - **NetBox MCP Server**: `http://localhost:8001/mcp` (or `http://netbox-mcp-server:8001/mcp` within Docker network)
 - **Catalyst Center MCP Server**: `http://localhost:8002/mcp` (or `http://catc-mcp-server:8002/mcp` within Docker network)
 - **IOS XE MCP Server**: `http://localhost:8003/mcp` (or `http://ios-xe-mcp-server:8003/mcp` within Docker network)
+- **ThousandEyes MCP Server**: `http://localhost:8004/mcp` (or `http://thousandeyes-mcp-server:8004/mcp` within Docker network)
 
 ### ⚙️ Configuration Options
 
