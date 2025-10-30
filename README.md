@@ -893,7 +893,13 @@ For support and questions:
 
 ## 🙏 Acknowledgments
 
-Special thanks to **kiskander** for the original [Meraki MCP Server](https://github.com/kiskander/meraki-mcp-server) implementation. This project builds upon that foundation to provide a containerized, multi-server deployment solution.
+Special thanks to:
+
+- **kiskander** for the original [Meraki MCP Server](https://github.com/kiskander/meraki-mcp-server) implementation. This project builds upon that foundation to provide a containerized, multi-server deployment solution.
+
+- **tspuhler** for the IOS XE MCP Server implementation, providing direct SSH-based device management capabilities for Cisco IOS XE devices.
+
+- **Aditya Chellam** and **Kiran Kabdal** for the [ThousandEyes MCP Community](https://github.com/CiscoDevNet/thousandeyes-mcp-community) server implementation. The ThousandEyes MCP Server in this suite is based on their comprehensive ThousandEyes v7 API integration.
 
 ## ⚠️ Disclaimer
 
