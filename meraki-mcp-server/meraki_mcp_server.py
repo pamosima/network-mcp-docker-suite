@@ -1,11 +1,11 @@
 """
-Meraki MCP Server (SSE Version)
+Meraki MCP Server
 
 A Model Context Protocol (MCP) server that provides secure, role-based access to the Cisco Meraki Dashboard API.
 This server allows AI assistants and other MCP clients to interact with Meraki networks while enforcing
 proper access controls based on user roles.
 
-This version uses Server-Sent Events (SSE) instead of stdio for communication.
+This version uses HTTP transport for communication with MCP clients.
 
 Features:
 - Role-based access control (NOC, SysAdmin, All)
@@ -68,9 +68,9 @@ load_dotenv_file()
 # Get API key from environment (now loaded from .env if available)
 api_key = os.getenv("MERAKI_KEY")
 
-# Get SSE server configuration
-sse_port = int(os.getenv("MCP_PORT", "8000"))
-sse_host = os.getenv("MCP_HOST", "localhost")
+# Get MCP server configuration
+mcp_port = int(os.getenv("MCP_PORT", "8000"))
+mcp_host = os.getenv("MCP_HOST", "localhost")
 
 # Validate required configuration
 if not api_key or api_key.startswith('your_actual_'):
@@ -80,7 +80,7 @@ if not api_key or api_key.startswith('your_actual_'):
     exit(1)
 
 print(f"✅ Meraki API key loaded: {api_key[:8]}...{api_key[-4:]}")
-print(f"🌐 SSE Server will run on: http://{sse_host}:{sse_port}")
+print(f"🌐 MCP Server will run on: http://{mcp_host}:{mcp_port}")
 
 
 # Create a custom HTTP client that cleans null values in API responses
@@ -416,17 +416,17 @@ if __name__ == "__main__":
     print(f"🔗 API Base URL: {client.base_url}")
     print(f"👤 Role: {role.upper()}")
     print(f"🛠️  Available endpoints: {len([r for r in selected_routes if r.mcp_type == MCPType.TOOL])}")
-    print(f"🌐 Server starting on: http://{sse_host}:{sse_port}")
-    print(f"🔗 HTTP endpoint: http://{sse_host}:{sse_port}")
+    print(f"🌐 Server starting on: http://{mcp_host}:{mcp_port}")
+    print(f"🔗 HTTP endpoint: http://{mcp_host}:{mcp_port}")
     print(f"✅ Server ready for MCP client connections via HTTP.")
     
     # Start the MCP server in HTTP mode
     try:
-        mcp.run(transport="http", host=sse_host, port=sse_port)
+        mcp.run(transport="http", host=mcp_host, port=mcp_port)
     except Exception as e:
         print(f"❌ Failed to start HTTP server: {e}")
         print(f"💡 Trying alternative HTTP startup method...")
         # Alternative method if the above doesn't work
         import uvicorn
         app = mcp.create_app()
-        uvicorn.run(app, host=sse_host, port=sse_port, log_level="info")
+        uvicorn.run(app, host=mcp_host, port=mcp_port, log_level="info")

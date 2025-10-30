@@ -164,9 +164,9 @@ if __name__ == "__main__":
     import os
     
     # Get configuration from environment
-    host = os.getenv("MCP_HOST", "0.0.0.0")
-    port = int(os.getenv("MCP_PORT", "8003"))
+    mcp_host = os.getenv("MCP_HOST", "0.0.0.0")
+    mcp_port = int(os.getenv("MCP_PORT", "8003"))
     
-    logger.info(f"Starting SECURE IOS XE MCP server on {host}:{port}")
+    logger.info(f"Starting SECURE IOS XE MCP server on {mcp_host}:{mcp_port}")
     logger.info("Security: Environment-only credentials, no password parameters accepted")
-    mcp.run(transport="http", host=host, port=port)
+    mcp.run(transport="http", host=mcp_host, port=mcp_port)

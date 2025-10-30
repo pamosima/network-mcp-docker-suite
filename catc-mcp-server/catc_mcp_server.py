@@ -17,8 +17,8 @@ Environment Variables:
 - CATC_URL: Required. Your Catalyst Center URL (e.g., https://catalyst-center.example.com)
 - CATC_USERNAME: Required. Your Catalyst Center username
 - CATC_PASSWORD: Required. Your Catalyst Center password
-- MCP_PORT: Optional. Port for SSE server. Defaults to 8002
-- MCP_HOST: Optional. Host for SSE server. Defaults to localhost
+- MCP_PORT: Optional. Port for MCP server. Defaults to 8002
+- MCP_HOST: Optional. Host for MCP server. Defaults to localhost
 
 Author: Generated for MCP Client Integration
 """
@@ -65,8 +65,8 @@ load_dotenv_file()
 CATC_URL = os.getenv("CATC_URL")
 CATC_USERNAME = os.getenv("CATC_USERNAME")
 CATC_PASSWORD = os.getenv("CATC_PASSWORD")
-MCP_HOST = os.getenv("MCP_HOST", "localhost")
-MCP_PORT = int(os.getenv("MCP_PORT", "8002"))
+mcp_host = os.getenv("MCP_HOST", "localhost")
+mcp_port = int(os.getenv("MCP_PORT", "8002"))
 
 # Validate required environment variables
 if not CATC_URL:
@@ -78,7 +78,7 @@ if not CATC_PASSWORD:
 
 print(f"🌐 Catalyst Center URL: {CATC_URL}")
 print(f"👤 Username: {CATC_USERNAME}")
-print(f"🚀 Starting MCP server on {MCP_HOST}:{MCP_PORT}")
+print(f"🚀 Starting MCP server on {mcp_host}:{mcp_port}")
 
 class CatalystCenterAPI:
     """Cisco Catalyst Center API client"""
@@ -476,4 +476,4 @@ if __name__ == "__main__":
         exit(1)
     
     # Start the MCP server
-    mcp.run(transport="http", host=MCP_HOST, port=MCP_PORT)
+    mcp.run(transport="http", host=mcp_host, port=mcp_port)

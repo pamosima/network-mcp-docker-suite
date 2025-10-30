@@ -16,8 +16,8 @@ Features:
 Environment Variables:
 - NETBOX_URL: Required. Your NetBox instance URL
 - NETBOX_TOKEN: Required. Your NetBox API token
-- MCP_PORT: Optional. Port for SSE server. Defaults to 8001
-- MCP_HOST: Optional. Host for SSE server. Defaults to localhost
+- MCP_PORT: Optional. Port for MCP server. Defaults to 8001
+- MCP_HOST: Optional. Host for MCP server. Defaults to localhost
 
 Author: Generated for MCP Client Integration
 """
@@ -64,8 +64,8 @@ load_dotenv_file()
 # Get configuration from environment
 netbox_url = os.getenv("NETBOX_URL")
 netbox_token = os.getenv("NETBOX_TOKEN")
-sse_port = int(os.getenv("MCP_PORT", "8001"))
-sse_host = os.getenv("MCP_HOST", "localhost")
+mcp_port = int(os.getenv("MCP_PORT", "8001"))
+mcp_host = os.getenv("MCP_HOST", "localhost")
 
 # Validate required configuration
 if not netbox_url:
@@ -82,7 +82,7 @@ if not netbox_token:
 
 print(f"✅ NetBox URL: {netbox_url}")
 print(f"✅ NetBox token configured")
-print(f"🌐 SSE Server will run on: http://{sse_host}:{sse_port}")
+print(f"🌐 MCP Server will run on: http://{mcp_host}:{mcp_port}")
 
 class NetBoxClientBase(abc.ABC):
     """
@@ -383,9 +383,9 @@ if __name__ == "__main__":
     print(f"🚀 NetBox MCP Server starting...")
     print(f"🔗 NetBox URL: {netbox_url}")
     print(f"🛠️  Available tools: 14 (DCIM, IPAM, CRUD operations)")
-    print(f"🌐 Server starting on: http://{sse_host}:{sse_port}")
-    print(f"📡 SSE endpoint: http://{sse_host}:{sse_port}/sse")
-    print(f"✅ Server ready for MCP client connections via SSE.")
+    print(f"🌐 Server starting on: http://{mcp_host}:{mcp_port}")
+    print(f"🔗 HTTP endpoint: http://{mcp_host}:{mcp_port}")
+    print(f"✅ Server ready for MCP client connections via HTTP.")
     print(f"")
     print(f"📋 Available NetBox operations:")
     print(f"   🏢 DCIM: Sites, Devices, Device Types")
@@ -393,13 +393,13 @@ if __name__ == "__main__":
     print(f"   🔍 Search & Query: Universal search across objects")
     print(f"   ✏️  CRUD: Create, Read, Update, Delete operations")
     
-    # Start the MCP server in SSE mode
+    # Start the MCP server in HTTP mode
     try:
-        mcp.run(transport="http", host=sse_host, port=sse_port)
+        mcp.run(transport="http", host=mcp_host, port=mcp_port)
     except Exception as e:
-        print(f"❌ Failed to start SSE server: {e}")
-        print(f"💡 Trying alternative SSE startup method...")
+        print(f"❌ Failed to start HTTP server: {e}")
+        print(f"💡 Trying alternative HTTP startup method...")
         # Alternative method if the above doesn't work
         import uvicorn
         app = mcp.create_app()
-        uvicorn.run(app, host=sse_host, port=sse_port, log_level="info")
+        uvicorn.run(app, host=mcp_host, port=mcp_port, log_level="info")
