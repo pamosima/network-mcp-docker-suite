@@ -33,21 +33,25 @@ show_usage() {
     echo "  build     Build images"
     echo ""
     echo "Profiles:"
-    echo "  all       All servers (Meraki + NetBox + Catalyst Center + IOS XE)"
+    echo "  all       All servers (Meraki + NetBox + Catalyst Center + ThousandEyes + IOS XE)"
     echo "  meraki    Meraki MCP server only"
     echo "  netbox    NetBox MCP server only"
     echo "  catc      Catalyst Center MCP server only"
+    echo "  thousandeyes ThousandEyes MCP server only"
     echo "  ios-xe    IOS XE MCP server only"
-    echo "  cisco     Cisco-focused (Meraki + Catalyst Center + IOS XE)"
-    echo "  network   Network management (Meraki + IOS XE)"
+    echo "  cisco     Cisco-focused (Meraki + Catalyst Center + ThousandEyes + IOS XE)"
+    echo "  network   Network management (Meraki + ThousandEyes + IOS XE)"
+    echo "  monitoring Network monitoring (Meraki + Catalyst Center + ThousandEyes)"
     echo "  docs      Documentation-focused (NetBox + Catalyst Center)"
     echo ""
     echo "Examples:"
     echo "  $0 start all          # Start all servers"
     echo "  $0 start meraki       # Start only Meraki server"
+    echo "  $0 start thousandeyes # Start only ThousandEyes server"
     echo "  $0 start ios-xe       # Start only IOS XE server"
     echo "  $0 start cisco        # Start Cisco-focused servers"
     echo "  $0 stop all           # Stop all servers"
+    echo "  $0 logs thousandeyes  # Show ThousandEyes server logs"
     echo "  $0 logs ios-xe        # Show IOS XE server logs"
     echo ""
 }
@@ -57,7 +61,7 @@ build_service_args() {
     local profile=$1
     case $profile in
         "all")
-            echo "meraki-mcp-servers netbox-mcp-server catc-mcp-server ios-xe-mcp-server"
+            echo "meraki-mcp-servers netbox-mcp-server catc-mcp-server thousandeyes-mcp-server ios-xe-mcp-server"
             ;;
         "meraki")
             echo "meraki-mcp-servers"
@@ -68,20 +72,26 @@ build_service_args() {
         "catc"|"catalyst")
             echo "catc-mcp-server"
             ;;
+        "thousandeyes"|"te")
+            echo "thousandeyes-mcp-server"
+            ;;
         "ios-xe"|"iosxe")
             echo "ios-xe-mcp-server"
             ;;
         "cisco")
-            echo "meraki-mcp-servers catc-mcp-server ios-xe-mcp-server"
+            echo "meraki-mcp-servers catc-mcp-server thousandeyes-mcp-server ios-xe-mcp-server"
             ;;
         "network"|"networking")
-            echo "meraki-mcp-servers ios-xe-mcp-server"
+            echo "meraki-mcp-servers thousandeyes-mcp-server ios-xe-mcp-server"
             ;;
         "management")
             echo "meraki-mcp-servers catc-mcp-server"
             ;;
         "docs"|"documentation")
             echo "netbox-mcp-server catc-mcp-server"
+            ;;
+        "monitoring")
+            echo "meraki-mcp-servers catc-mcp-server thousandeyes-mcp-server"
             ;;
         *)
             echo -e "${RED}Error: Unknown profile '$profile'${NC}"
