@@ -1,7 +1,29 @@
-# IOS XE MCP Server for MCP client integration
-# ============================================
-# MCP Server implementation for Cisco IOS XE device management
-# Provides SSH-based device configuration and monitoring capabilities
+"""
+Cisco IOS XE MCP Server
+
+A Model Context Protocol (MCP) server that provides direct SSH-based management capabilities for Cisco IOS XE devices.
+This server allows AI assistants and other MCP clients to execute show commands and configuration changes
+on IOS XE devices through secure SSH connections with enterprise-grade security.
+
+Features:
+- Direct SSH-based device management
+- Show command execution for monitoring and troubleshooting
+- Configuration change deployment with automatic save
+- Secure credential management (environment variables only)
+- Password sanitization in logs and error messages
+- Connection error handling and diagnostics
+- Read and write operations with proper authentication
+- HTTP transport for modern MCP client compatibility
+
+Environment Variables:
+- IOS_XE_USERNAME: Required. Default IOS XE username for device access
+- IOS_XE_PASSWORD: Required. Default IOS XE password for device access
+- MCP_HOST: Optional. Host for MCP server. Defaults to localhost  
+- MCP_PORT: Optional. Port for MCP server. Defaults to 8003
+
+Author: Patrick Mosimann
+Based on: SSH device management concepts by tspuhler
+"""
 
 from fastmcp import FastMCP
 from netmiko import ConnectHandler
