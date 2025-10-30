@@ -19,7 +19,7 @@ Environment Variables:
 - MCP_PORT: Optional. Port for MCP server. Defaults to 8004
 - MCP_HOST: Optional. Host for MCP server. Defaults to localhost
 
-Author: Generated for MCP Client Integration
+Author: Patrick Mosimann
 Based on: https://github.com/CiscoDevNet/thousandeyes-mcp-community
 """
 

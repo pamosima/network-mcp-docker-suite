@@ -21,7 +21,7 @@ Environment Variables:
 - MCP_PORT: Optional. Port for HTTP server. Defaults to 8000
 - MCP_HOST: Optional. Host for HTTP server. Defaults to localhost
 
-Author: Kareem Iskander
+Author: Patrick Mosimann
 """
 
 import httpx
