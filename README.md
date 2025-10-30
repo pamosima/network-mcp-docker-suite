@@ -238,12 +238,16 @@ By default, `docker-compose up -d` will start all MCP servers. For selective dep
 
 | Profile | Description | Servers Deployed |
 |---------|-------------|------------------|
-| `all` | Deploy all servers | Meraki + NetBox + Catalyst Center + IOS XE |
+| `all` | Deploy all servers | Meraki + NetBox + Catalyst Center + ThousandEyes + IOS XE |
 | `meraki` | Deploy only Meraki server | Meraki MCP Server |
 | `netbox` | Deploy only NetBox server | NetBox MCP Server |
 | `catc` or `catalyst` | Deploy only Catalyst Center server | Catalyst Center MCP Server |
+| `thousandeyes` or `te` | Deploy only ThousandEyes server | ThousandEyes MCP Server |
 | `ios-xe` | Deploy only IOS XE server | IOS XE MCP Server |
-| `management` | Deploy network management servers | Meraki + Catalyst Center + IOS XE |
+| `cisco` | Deploy Cisco-focused servers | Meraki + Catalyst Center + ThousandEyes + IOS XE |
+| `network` | Deploy network management servers | Meraki + ThousandEyes + IOS XE |
+| `monitoring` | Deploy network monitoring servers | Meraki + Catalyst Center + ThousandEyes |
+| `management` | Deploy traditional management servers | Meraki + Catalyst Center |
 | `docs` | Deploy documentation-focused servers | NetBox + Catalyst Center |
 
 ### Deployment Examples
@@ -256,8 +260,12 @@ docker-compose down                          # Stop all servers
 # Selective deployment using convenience script
 ./deploy.sh start all                        # Start all servers
 ./deploy.sh start meraki                     # Start only Meraki
+./deploy.sh start thousandeyes               # Start only ThousandEyes
 ./deploy.sh start ios-xe                     # Start only IOS XE
-./deploy.sh start management                 # Start Meraki + Catalyst Center + IOS XE
+./deploy.sh start cisco                      # Start Cisco-focused (Meraki + CatC + TE + IOS XE)
+./deploy.sh start monitoring                 # Start monitoring (Meraki + CatC + ThousandEyes)
+./deploy.sh start network                    # Start network management (Meraki + TE + IOS XE)
+./deploy.sh start management                 # Start traditional management (Meraki + CatC)
 ./deploy.sh start docs                       # Start NetBox + Catalyst Center
 
 # Management operations
@@ -277,7 +285,10 @@ chmod +x deploy.sh
 # Easy deployment commands
 ./deploy.sh start all          # Start all servers
 ./deploy.sh start meraki       # Start only Meraki
-./deploy.sh start management   # Start Meraki + Catalyst Center
+./deploy.sh start thousandeyes # Start only ThousandEyes
+./deploy.sh start cisco        # Start Cisco-focused servers
+./deploy.sh start monitoring   # Start network monitoring servers
+./deploy.sh start management   # Start traditional management servers
 ./deploy.sh start docs         # Start NetBox + Catalyst Center
 
 # Management commands
@@ -497,9 +508,9 @@ docker-compose logs meraki-mcp-server > meraki-server.log
 
 | **MCP Client** | **Configuration File** | **Port Range** |
 |---|---|---|
-| **Cursor IDE** | `~/.cursor/mcp.json` | 8000-8003 |
-| **LibreChat** | `librechat.yaml` | 8000-8003 |
-| **Custom Client** | HTTP transport to `localhost:PORT/mcp` | 8000-8003 |
+| **Cursor IDE** | `~/.cursor/mcp.json` | 8000-8004 |
+| **LibreChat** | `librechat.yaml` | 8000-8004 |
+| **Custom Client** | HTTP transport to `localhost:PORT/mcp` | 8000-8004 |
 
 ### MCP Client Integration
 
@@ -584,6 +595,10 @@ networks:
        type: streamable-http
        url: http://ios-xe-mcp-server:8003/mcp
        timeout: 60000
+     ThousandEyes-MCP-Server:
+       type: streamable-http
+       url: http://thousandeyes-mcp-server:8004/mcp
+       timeout: 60000
    ```
 
 5. **Restart your MCP client** to load the new MCP server configurations
@@ -614,7 +629,12 @@ For **Cursor IDE**, create or update your `~/.cursor/mcp.json` file:
       "transport": "http", 
       "url": "http://localhost:8003/mcp",
       "timeout": 60000
-    }   
+    },
+    "ThousandEyes-MCP-Server": {
+      "transport": "http",
+      "url": "http://localhost:8004/mcp",
+      "timeout": 60000
+    }    
   }
 }
 ```
