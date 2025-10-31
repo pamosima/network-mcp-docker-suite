@@ -529,6 +529,75 @@ def ise_get_device_compliance_status(mac_address: str) -> Dict[str, Any]:
         "compliance_status": "Retrieved endpoint data - check profiledBy and groupId fields for compliance"
     }
 
+@mcp.tool()
+def ise_get_sxp_connections(
+    filter_expression: Optional[str] = None,
+    page: int = 1,
+    size: int = 20
+) -> Dict[str, Any]:
+    """
+    Get SXP connections for IP-SGT mapping distribution (TrustSec)
+    
+    Args:
+        filter_expression: Filter in format 'field.OPERATION.value' (e.g., 'ipAddress.CONTAINS.192.168')
+        page: Page number for pagination (default: 1)
+        size: Number of results per page (default: 20, max: 100)
+    
+    Returns:
+        Dict containing SXP connection information for TrustSec
+    """
+    params = {"page": page, "size": min(size, 100)}
+    if filter_expression:
+        params["filter"] = filter_expression
+    
+    return ise_api.get("sxpconnections", params=params)
+
+@mcp.tool()
+def ise_get_tacacs_command_sets(
+    filter_expression: Optional[str] = None,
+    page: int = 1,
+    size: int = 20
+) -> Dict[str, Any]:
+    """
+    Get TACACS+ command sets for device administration authorization
+    
+    Args:
+        filter_expression: Filter in format 'field.OPERATION.value' (e.g., 'name.CONTAINS.network')
+        page: Page number for pagination (default: 1)
+        size: Number of results per page (default: 20, max: 100)
+    
+    Returns:
+        Dict containing TACACS+ command set information
+    """
+    params = {"page": page, "size": min(size, 100)}
+    if filter_expression:
+        params["filter"] = filter_expression
+    
+    return ise_api.get("tacacscommandsets", params=params)
+
+@mcp.tool()
+def ise_get_tacacs_profiles(
+    filter_expression: Optional[str] = None,
+    page: int = 1,
+    size: int = 20
+) -> Dict[str, Any]:
+    """
+    Get TACACS+ profiles for device administration authentication
+    
+    Args:
+        filter_expression: Filter in format 'field.OPERATION.value' (e.g., 'name.CONTAINS.admin')
+        page: Page number for pagination (default: 1)
+        size: Number of results per page (default: 20, max: 100)
+    
+    Returns:
+        Dict containing TACACS+ profile information
+    """
+    params = {"page": page, "size": min(size, 100)}
+    if filter_expression:
+        params["filter"] = filter_expression
+    
+    return ise_api.get("tacacsprofile", params=params)
+
 if __name__ == "__main__":
     print("🚀 Starting Cisco ISE MCP Server...")
     

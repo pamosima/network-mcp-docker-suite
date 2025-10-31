@@ -1,5 +1,7 @@
 # Cisco ISE MCP Server
 
+> **✅ Complete Implementation**: All 18 ISE ERS API endpoints from the [original ISE_MCP specification](https://github.com/automateyournetwork/ISE_MCP/blob/main/src/ise_mcp_server/config/urls.json) are fully implemented.
+
 A Model Context Protocol (MCP) server that provides comprehensive access to Cisco Identity Services Engine (ISE) API functionality for network access control, policy management, and security operations with enterprise-grade security.
 
 ## Overview
@@ -39,8 +41,13 @@ This MCP server provides **secure** API-based access to Cisco ISE capabilities, 
 
 **Security & TrustSec:**
 - **`ise_get_security_groups`**: List Security Group Tags (SGTs)
+- **`ise_get_sxp_connections`**: List SXP connections for IP-SGT mapping distribution ⭐ NEW
 - **`ise_get_active_sessions`**: Monitor active network access sessions
 - **`ise_search_user_sessions`**: Find active sessions by username
+
+**Device Administration (TACACS+):**
+- **`ise_get_tacacs_command_sets`**: List TACACS+ command sets for authorization ⭐ NEW
+- **`ise_get_tacacs_profiles`**: List TACACS+ profiles for authentication ⭐ NEW
 
 ### Security Features
 
