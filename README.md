@@ -17,13 +17,14 @@ AI-Powered Network Troubleshooting with LibreChat using Multiple MCP Servers
 
 ## 📋 Description
 
-This Docker suite contains six example MCP servers for comprehensive network infrastructure management:
+This Docker suite contains seven example MCP servers for comprehensive network infrastructure management:
 
 - **Meraki MCP Server**: Provides comprehensive access to Cisco Meraki Dashboard API functionality including device management, network monitoring, and configuration operations
 - **NetBox MCP Server**: Enables complete NetBox DCIM/IPAM capabilities for infrastructure documentation, IP address management, and device lifecycle tracking
 - **Catalyst Center MCP Server**: Delivers full Cisco Catalyst Center functionality including network device management, site topology, client analytics, and network assurance
 - **ThousandEyes MCP Server**: Provides comprehensive access to Cisco ThousandEyes v7 API for network performance monitoring, path visualization, dashboard data, and alert management
 - **ISE MCP Server**: Provides comprehensive access to Cisco Identity Services Engine (ISE) for network access control, policy management, user/device identity, and security operations
+- **Splunk MCP Server**: Provides log analysis and monitoring capabilities through Splunk's powerful search and analytics platform for operational intelligence and security monitoring
 - **IOS XE MCP Server**: Enables direct SSH-based management of Cisco IOS XE devices including configuration changes, monitoring commands, and device information retrieval
 
 All servers are containerized using Docker with flexible deployment profiles, designed for development, testing, and demonstration environments with seamless integration across MCP clients.
@@ -93,6 +94,7 @@ For comprehensive use case scenarios and implementation details, see:
 - Cisco Catalyst Center with credentials (for Catalyst Center MCP Server)
 - Cisco ThousandEyes with API v7 Bearer token (for ThousandEyes MCP Server)
 - Cisco ISE with ERS API enabled and credentials (for ISE MCP Server)
+- Splunk instance with Bearer token authentication (for Splunk MCP Server)
 - Cisco IOS XE device with SSH access (for IOS XE MCP Server)
 
 ### 🚀 Quick Start
@@ -131,6 +133,10 @@ nano thousandeyes-mcp-server/.env
 # For ISE MCP server (if using --profile ise or --profile all)
 cp ise-mcp-server/.env.example ise-mcp-server/.env
 nano ise-mcp-server/.env
+
+# For Splunk MCP server (if using --profile splunk or --profile all)
+cp splunk-mcp-server/.env.example splunk-mcp-server/.env
+nano splunk-mcp-server/.env
 
 # For IOS XE MCP server (if using --profile ios-xe or --profile all)
 cp ios-xe-mcp-server/.env.example ios-xe-mcp-server/.env
@@ -174,10 +180,18 @@ ISE_PASSWORD=your_ise_password
 ISE_VERIFY_SSL=False
 ```
 
+**splunk-mcp-server/.env:**
+```bash
+SPLUNK_HOST=splunk.company.com
+SPLUNK_PORT=8089
+SPLUNK_API_KEY=your_splunk_bearer_token_here
+SPLUNK_VERIFY_SSL=false
+```
+
 **ios-xe-mcp-server/.env:**
 ```bash
 # Optional default device settings (credentials can also be provided per API request)
-IOS_XE_HOST=192.168.1.1
+IOS_XE_HOST=switch.company.com
 IOS_XE_USERNAME=admin
 IOS_XE_PASSWORD=your_device_password
 MCP_HOST=0.0.0.0
@@ -244,6 +258,7 @@ curl http://localhost:8002/mcp    # Catalyst Center MCP Server
 curl http://localhost:8003/mcp    # IOS XE MCP Server
 curl http://localhost:8004/mcp    # ThousandEyes MCP Server
 curl http://localhost:8005/mcp    # ISE MCP Server
+curl http://localhost:8006/mcp    # Splunk MCP Server
 ```
 
 ## 🎯 Deployment Options
@@ -254,17 +269,18 @@ By default, `docker-compose up -d` will start all MCP servers. For selective dep
 
 | Profile | Description | Servers Deployed |
 |---------|-------------|------------------|
-| `all` | Deploy all servers | Meraki + NetBox + Catalyst Center + ThousandEyes + ISE + IOS XE |
+| `all` | Deploy all servers | Meraki + NetBox + Catalyst Center + ThousandEyes + ISE + Splunk + IOS XE |
 | `meraki` | Deploy only Meraki server | Meraki MCP Server |
 | `netbox` | Deploy only NetBox server | NetBox MCP Server |
 | `catc` or `catalyst` | Deploy only Catalyst Center server | Catalyst Center MCP Server |
 | `thousandeyes` or `te` | Deploy only ThousandEyes server | ThousandEyes MCP Server |
 | `ise` | Deploy only ISE server | ISE MCP Server |
+| `splunk` | Deploy only Splunk server | Splunk MCP Server |
 | `ios-xe` | Deploy only IOS XE server | IOS XE MCP Server |
 | `cisco` | Deploy Cisco-focused servers | Meraki + Catalyst Center + ThousandEyes + ISE + IOS XE |
 | `network` | Deploy network management servers | Meraki + ThousandEyes + IOS XE |
 | `security` | Deploy security-focused servers | Catalyst Center + ISE |
-| `monitoring` | Deploy network monitoring servers | Meraki + Catalyst Center + ThousandEyes |
+| `monitoring` | Deploy network monitoring servers | Meraki + Catalyst Center + ThousandEyes + Splunk |
 | `management` | Deploy traditional management servers | Meraki + Catalyst Center |
 | `docs` | Deploy documentation-focused servers | NetBox + Catalyst Center |
 
@@ -398,6 +414,7 @@ All MCP servers provide standardized endpoints for integration:
 - **IOS XE MCP Server**: `http://localhost:8003/mcp` (or `http://ios-xe-mcp-server:8003/mcp` within Docker network)
 - **ThousandEyes MCP Server**: `http://localhost:8004/mcp` (or `http://thousandeyes-mcp-server:8004/mcp` within Docker network)
 - **ISE MCP Server**: `http://localhost:8005/mcp` (or `http://ise-mcp-server:8005/mcp` within Docker network)
+- **Splunk MCP Server**: `http://localhost:8006/mcp` (or `http://splunk-mcp-server:8006/mcp` within Docker network)
 
 ### ⚙️ Configuration Options
 
@@ -530,9 +547,9 @@ docker-compose logs meraki-mcp-server > meraki-server.log
 
 | **MCP Client** | **Configuration File** | **Port Range** |
 |---|---|---|
-| **Cursor IDE** | `~/.cursor/mcp.json` | 8000-8005 |
-| **LibreChat** | `librechat.yaml` | 8000-8005 |
-| **Custom Client** | HTTP transport to `localhost:PORT/mcp` | 8000-8005 |
+| **Cursor IDE** | `~/.cursor/mcp.json` | 8000-8006 |
+| **LibreChat** | `librechat.yaml` | 8000-8006 |
+| **Custom Client** | HTTP transport to `localhost:PORT/mcp` | 8000-8006 |
 
 ### MCP Client Integration
 
@@ -617,13 +634,17 @@ networks:
        type: streamable-http
        url: http://ios-xe-mcp-server:8003/mcp
        timeout: 60000
+     ThousandEyes-MCP-Server:
+       type: streamable-http
+       url: http://thousandeyes-mcp-server:8004/mcp
+       timeout: 60000
      ISE-MCP-Server:
        type: streamable-http
        url: http://ise-mcp-server:8005/mcp
        timeout: 60000
-     ThousandEyes-MCP-Server:
+     Splunk-MCP-Server:
        type: streamable-http
-       url: http://thousandeyes-mcp-server:8004/mcp
+       url: http://splunk-mcp-server:8006/mcp
        timeout: 60000
    ```
 
@@ -665,6 +686,11 @@ For **Cursor IDE**, create or update your `~/.cursor/mcp.json` file:
       "transport": "http",
       "url": "http://localhost:8005/mcp",
       "timeout": 60000
+    },
+    "Splunk-MCP-Server": {
+      "transport": "http",
+      "url": "http://localhost:8006/mcp",
+      "timeout": 60000
     }    
   }
 }
@@ -687,6 +713,7 @@ curl http://localhost:8002/mcp    # Catalyst Center MCP Server
 curl http://localhost:8003/mcp    # IOS XE MCP Server
 curl http://localhost:8004/mcp    # ThousandEyes MCP Server
 curl http://localhost:8005/mcp    # ISE MCP Server
+curl http://localhost:8006/mcp    # Splunk MCP Server
 ```
 
 ### Network Isolation Benefits
@@ -912,6 +939,7 @@ curl -X POST http://localhost:8002/mcp  # Catalyst Center
 curl -X POST http://localhost:8003/mcp  # IOS XE
 curl -X POST http://localhost:8004/mcp  # ThousandEyes
 curl -X POST http://localhost:8005/mcp  # ISE
+curl -X POST http://localhost:8006/mcp  # Splunk
 
 # 4. Check all servers are running
 ./deploy.sh status all

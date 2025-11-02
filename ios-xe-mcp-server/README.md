@@ -39,17 +39,17 @@ This MCP server provides **secure** SSH-based management capabilities for Cisco 
 
 ```python
 # Secure: Only host and command required (credentials from .env)
-result = show_command("show version", "192.168.1.1")
-result = show_command("show ip interface brief", "192.168.1.1") 
-result = show_command("show ip route summary", "192.168.1.1")
+result = show_command("show version", "switch.company.com")
+result = show_command("show ip interface brief", "switch.company.com") 
+result = show_command("show ip route summary", "switch.company.com")
 
 # Check BGP status
-result = show_command("show ip bgp summary", "192.168.1.1")
-result = show_command("show bgp l2vpn evpn summary", "192.168.1.1")
+result = show_command("show ip bgp summary", "switch.company.com")
+result = show_command("show bgp l2vpn evpn summary", "switch.company.com")
 
 # Device information commands  
-result = show_command("show ip protocols", "192.168.1.1")
-result = show_command("show running-config interface gi0/1", "192.168.1.1")
+result = show_command("show ip protocols", "switch.company.com")
+result = show_command("show running-config interface gi0/1", "switch.company.com")
 ```
 
 ### Configuration Commands
@@ -60,19 +60,19 @@ result = config_command([
     "interface GigabitEthernet0/1",
     "description Connected to Server", 
     "no shutdown"
-], "192.168.1.1")
+], "switch.company.com")
 
 # Network configuration
 result = config_command([
-    "ip route 10.1.0.0 255.255.0.0 192.168.1.254"
-], "192.168.1.1")
+    "ip route 10.1.0.0 255.255.0.0 10.1.1.1"
+], "switch.company.com")
 
 # Multiple interface configuration
 result = config_command([
     "interface range GigabitEthernet0/1-4",
     "switchport mode access",
     "switchport access vlan 100"
-], "192.168.1.1")
+], "switch.company.com")
 ```
 
 ### Security Logs Example
@@ -80,8 +80,8 @@ result = config_command([
 ```log
 INFO: Loaded credentials for user: admin
 INFO: Secure mode: Credentials loaded from environment only
-INFO: Connecting to 192.168.1.1 as 'admin' (pwd: y*********) to execute: show ip bgp summary
-INFO: Successfully executed command on 192.168.1.1
+INFO: Connecting to switch.company.com as 'admin' (pwd: y*********) to execute: show ip bgp summary
+INFO: Successfully executed command on switch.company.com
 ```
 
 ## Configuration
@@ -243,8 +243,8 @@ docker-compose exec ios-xe-mcp-server env | grep IOS_XE
 # This happens when using old function signatures
 
 # Solution: Use new secure syntax (no credentials)
-show_command("show version", "192.168.1.1")  # ✅ Correct
-show_command("show version", "192.168.1.1", username="user", password="pass")  # ❌ Wrong
+show_command("show version", "switch.company.com")  # ✅ Correct
+show_command("show version", "switch.company.com", username="user", password="pass")  # ❌ Wrong
 ```
 
 **SSH Connection Failures**
@@ -259,7 +259,7 @@ telnet <device-ip> 22
 show ip ssh
 
 # Verify credentials work manually
-ssh admin@192.168.1.1
+ssh admin@switch.company.com
 ```
 
 **Authentication Errors**
@@ -279,7 +279,7 @@ Common causes:
 SSH_TIMEOUT=120
 
 # Or check device response time
-time ssh admin@192.168.1.1 "show version"
+time ssh admin@switch.company.com "show version"
 ```
 
 ### Debug Logging
@@ -291,7 +291,7 @@ Enable detailed logging by setting `LOG_LEVEL=DEBUG` in environment variables.
 docker-compose logs -f ios-xe-mcp-server
 
 # Example secure log output:
-# INFO: Connecting to 192.168.1.1 as 'admin' (pwd: y*********) to execute: show version
+# INFO: Connecting to switch.company.com as 'admin' (pwd: y*********) to execute: show version
 ```
 
 ### Security Validation
@@ -315,13 +315,13 @@ Execute a show command on an IOS XE device.
 
 **Parameters:**
 - `command` (string): Show command to execute (e.g., `"show ip bgp summary"`)
-- `host` (string): Device IP address or hostname (e.g., `"192.168.1.1"`)
+- `host` (string): Device IP address or hostname (e.g., `"switch.company.com"`)
 
 **Returns:** Command output as string
 
 **Example:**
 ```python
-result = show_command("show version", "192.168.1.1")
+result = show_command("show version", "switch.company.com")
 ```
 
 ### Tool: config_command
@@ -341,7 +341,7 @@ Send configuration commands to an IOS XE device.
 result = config_command([
     "interface GigabitEthernet0/1", 
     "no shutdown"
-], "192.168.1.1")
+], "switch.company.com")
 ```
 
 ### Security Features

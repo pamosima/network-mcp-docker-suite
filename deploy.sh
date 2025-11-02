@@ -52,12 +52,14 @@ show_usage() {
     echo "  $0 start thousandeyes # Start only ThousandEyes server"
     echo "  $0 start ise          # Start only ISE server"
     echo "  $0 start ios-xe       # Start only IOS XE server"
+    echo "  $0 start splunk       # Start only Splunk server"
     echo "  $0 start cisco        # Start Cisco-focused servers"
     echo "  $0 start security     # Start security-focused servers"
     echo "  $0 stop all           # Stop all servers"
     echo "  $0 logs thousandeyes  # Show ThousandEyes server logs"
     echo "  $0 logs ise           # Show ISE server logs"
     echo "  $0 logs ios-xe        # Show IOS XE server logs"
+    echo "  $0 logs splunk        # Show Splunk server logs"
     echo ""
 }
 
@@ -66,7 +68,7 @@ build_service_args() {
     local profile=$1
     case $profile in
         "all")
-            echo "meraki-mcp-servers netbox-mcp-server catc-mcp-server thousandeyes-mcp-server ise-mcp-server ios-xe-mcp-server"
+            echo "meraki-mcp-servers netbox-mcp-server catc-mcp-server thousandeyes-mcp-server ise-mcp-server ios-xe-mcp-server splunk-mcp-server"
             ;;
         "meraki")
             echo "meraki-mcp-servers"
@@ -86,6 +88,9 @@ build_service_args() {
         "ios-xe"|"iosxe")
             echo "ios-xe-mcp-server"
             ;;
+        "splunk")
+            echo "splunk-mcp-server"
+            ;;
         "cisco")
             echo "meraki-mcp-servers catc-mcp-server thousandeyes-mcp-server ise-mcp-server ios-xe-mcp-server"
             ;;
@@ -102,7 +107,7 @@ build_service_args() {
             echo "netbox-mcp-server catc-mcp-server"
             ;;
         "monitoring")
-            echo "meraki-mcp-servers catc-mcp-server thousandeyes-mcp-server"
+            echo "meraki-mcp-servers catc-mcp-server thousandeyes-mcp-server splunk-mcp-server"
             ;;
         *)
             echo -e "${RED}Error: Unknown profile '$profile'${NC}"
