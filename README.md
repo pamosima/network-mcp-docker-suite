@@ -19,13 +19,13 @@ AI-Powered Network Troubleshooting with LibreChat using Multiple MCP Servers
 
 This Docker suite contains seven example MCP servers for comprehensive network infrastructure management:
 
-- **Meraki MCP Server**: Provides comprehensive access to Cisco Meraki Dashboard API functionality including device management, network monitoring, and configuration operations
-- **NetBox MCP Server**: Enables complete NetBox DCIM/IPAM capabilities for infrastructure documentation, IP address management, and device lifecycle tracking
-- **Catalyst Center MCP Server**: Delivers full Cisco Catalyst Center functionality including network device management, site topology, client analytics, and network assurance
-- **IOS XE MCP Server**: Enables direct SSH-based management of Cisco IOS XE devices including configuration changes, monitoring commands, and device information retrieval
-- **ThousandEyes MCP Server**: Provides comprehensive access to Cisco ThousandEyes v7 API for network performance monitoring, path visualization, dashboard data, and alert management
-- **ISE MCP Server**: Provides comprehensive access to Cisco Identity Services Engine (ISE) for network access control, policy management, user/device identity, and security operations
-- **Splunk MCP Server**: Provides log analysis and monitoring capabilities through Splunk's powerful search and analytics platform for operational intelligence and security monitoring
+- **Meraki MCP Server** (8000): Cloud network management through Meraki Dashboard API - [📖 Details](meraki-mcp-server/README.md)
+- **NetBox MCP Server** (8001): DCIM/IPAM infrastructure documentation and management - [📖 Details](netbox-mcp-server/README.md)
+- **Catalyst Center MCP Server** (8002): Enterprise network management and assurance - [📖 Details](catc-mcp-server/README.md)
+- **IOS XE MCP Server** (8003): Direct SSH-based device management - [📖 Details](ios-xe-mcp-server/README.md)
+- **ThousandEyes MCP Server** (8004): Network performance monitoring and path visualization - [📖 Details](thousandeyes-mcp-server/README.md)
+- **ISE MCP Server** (8005): Identity and access control operations - [📖 Details](ise-mcp-server/README.md)
+- **Splunk MCP Server** (8006): Log analysis and operational intelligence - [📖 Details](splunk-mcp-server/README.md)
 
 All servers are containerized using Docker with flexible deployment profiles, designed for development, testing, and demonstration environments with seamless integration across MCP clients.
 
@@ -79,7 +79,6 @@ For comprehensive use case scenarios and implementation details, see:
 - **📈 [Splunk Server Guide](splunk-mcp-server/README.md)** - Log analysis and operational intelligence monitoring
 - **🤝 [Contributing Guidelines](CONTRIBUTING.md)** - How to extend use cases and add new functionality
 
-
 ## 🧩 Solution Components
 
 ### 🏢 Architecture
@@ -88,265 +87,78 @@ For comprehensive use case scenarios and implementation details, see:
 - **Network Isolation**: Secure communication via Docker networks
 - **Role-Based Access**: Configurable permission levels for different user types
 
-## 🚀 Installation
+## 🚀 Quick Start
 
 ### 📋 Prerequisites
 
 - Docker Engine 20.10+
 - Docker Compose 2.0+  
-- Valid Meraki Dashboard API key (for Meraki MCP Server)
-- NetBox instance with API access (for NetBox MCP Server)
-- Cisco Catalyst Center with credentials (for Catalyst Center MCP Server)
-- Cisco IOS XE device with SSH access (for IOS XE MCP Server)
-- Cisco ThousandEyes with API v7 Bearer token (for ThousandEyes MCP Server)
-- Cisco ISE with ERS API enabled and credentials (for ISE MCP Server)
-- Splunk instance with Bearer token authentication (for Splunk MCP Server)
+- **API Access**: Valid credentials for the network platforms you want to integrate (see individual server guides for specific requirements)
 
-### 🚀 Quick Start
-
-#### 1. Clone the Repository
+### ⚡ 3-Minute Setup
 
 ```bash
-# Clone this repository
+# 1. Clone repository
 git clone https://github.com/pamosima/network-mcp-docker-suite.git
 cd network-mcp-docker-suite
+
+# 2. Configure servers you need (see individual server READMEs for details)
+cp meraki-mcp-server/.env.example meraki-mcp-server/.env    # For Meraki integration
+cp catc-mcp-server/.env.example catc-mcp-server/.env        # For Catalyst Center
+# ... configure other servers as needed
+
+# 3. Deploy servers
+./deploy.sh start all          # All servers
+# OR
+./deploy.sh start cisco        # Just Cisco platforms
+# OR  
+./deploy.sh start meraki       # Just Meraki
+
+# 4. Verify deployment
+curl http://localhost:8000/mcp    # Test Meraki server
+curl http://localhost:8002/mcp    # Test Catalyst Center server
 ```
 
-#### 2. Configure Environment Variables
-
-Copy the environment templates and configure your API keys (only for servers you plan to deploy):
-
-```bash
-# Copy environment templates for the servers you need
-
-# For Meraki MCP server (if using --profile meraki or --profile all)
-cp meraki-mcp-server/.env.example meraki-mcp-server/.env
-nano meraki-mcp-server/.env
-
-# For NetBox MCP server (if using --profile netbox or --profile all)
-cp netbox-mcp-server/.env.example netbox-mcp-server/.env
-nano netbox-mcp-server/.env
-
-# For Catalyst Center MCP server (if using --profile catc or --profile all)
-cp catc-mcp-server/.env.example catc-mcp-server/.env
-nano catc-mcp-server/.env
-
-# For IOS XE MCP server (if using --profile ios-xe or --profile all)
-cp ios-xe-mcp-server/.env.example ios-xe-mcp-server/.env
-nano ios-xe-mcp-server/.env
-
-# For ThousandEyes MCP server (if using --profile thousandeyes or --profile all)
-cp thousandeyes-mcp-server/.env.example thousandeyes-mcp-server/.env
-nano thousandeyes-mcp-server/.env
-
-# For ISE MCP server (if using --profile ise or --profile all)
-cp ise-mcp-server/.env.example ise-mcp-server/.env
-nano ise-mcp-server/.env
-
-# For Splunk MCP server (if using --profile splunk or --profile all)
-cp splunk-mcp-server/.env.example splunk-mcp-server/.env
-nano splunk-mcp-server/.env
-```
-
-> 💡 **Tip**: Only configure the `.env` files for the servers you plan to deploy. For example, if you only need Meraki integration, you only need to configure `meraki-mcp-server/.env`.
-
-Configure your actual credentials in the respective `.env` files:
-
-**meraki-mcp-server/.env:**
-```bash
-MERAKI_KEY=your_actual_meraki_api_key_here
-MCP_ROLE=noc
-```
-
-**netbox-mcp-server/.env:**
-```bash
-NETBOX_URL=https://netbox.example.com
-NETBOX_TOKEN=your_netbox_token_here
-```
-
-**catc-mcp-server/.env:**
-```bash
-CATC_URL=https://catalyst-center.example.com
-CATC_USERNAME=your_catalyst_center_username
-CATC_PASSWORD=your_catalyst_center_password
-```
-
-**ios-xe-mcp-server/.env:**
-```bash
-# Optional default device settings (credentials can also be provided per API request)
-IOS_XE_HOST=switch.company.com
-IOS_XE_USERNAME=admin
-IOS_XE_PASSWORD=your_device_password
-MCP_HOST=0.0.0.0
-MCP_PORT=8003
-LOG_LEVEL=INFO
-```
-
-**thousandeyes-mcp-server/.env:**
-```bash
-TE_TOKEN=your_thousandeyes_api_bearer_token_here
-TE_BASE_URL=https://api.thousandeyes.com/v7
-```
-
-**ise-mcp-server/.env:**
-```bash
-ISE_HOST=ise.company.com
-ISE_USERNAME=your_ise_username
-ISE_PASSWORD=your_ise_password
-ISE_VERIFY_SSL=False
-```
-
-**splunk-mcp-server/.env:**
-```bash
-SPLUNK_HOST=splunk.company.com
-SPLUNK_PORT=8089
-SPLUNK_API_KEY=your_splunk_bearer_token_here
-SPLUNK_VERIFY_SSL=false
-```
-
-#### 3. Optional: Configure Custom Networks
-
-If you need custom network settings (e.g., for integration with other applications), copy and modify the network override file:
-
-```bash
-# Copy the network configuration template (optional)
-cp docker-compose.override.yml.example docker-compose.override.yml
-
-# Edit network settings if needed
-nano docker-compose.override.yml
-
-# Create the custom network (if using external network like 'demo')
-docker network create -d bridge demo
-```
-
-#### 4. Deploy the Servers
-
-**Default behavior** - Deploy all servers:
-
-```bash
-# Deploy ALL servers (default behavior)
-docker-compose up -d
-
-# View logs for all servers
-docker-compose logs -f
-
-# Check status of all servers
-docker-compose ps
-```
-
-**Selective deployment** - Use the convenience script:
-
-```bash
-# Deploy specific servers using convenience script
-./deploy.sh start meraki        # Deploy only Meraki
-./deploy.sh start netbox        # Deploy only NetBox  
-./deploy.sh start catc          # Deploy only Catalyst Center
-./deploy.sh start ios-xe        # Deploy only IOS XE
-./deploy.sh start management    # Deploy Meraki + Catalyst Center
-./deploy.sh start docs          # Deploy NetBox + Catalyst Center
-
-# View logs for specific deployments
-./deploy.sh logs meraki
-./deploy.sh logs management
-
-# Check status
-./deploy.sh status all
-```
-
-#### 5. Verify Deployment
-
-```bash
-# Test MCP servers (check if they respond to MCP protocol)
-curl http://localhost:8000/mcp    # Meraki MCP Server
-curl http://localhost:8001/mcp    # NetBox MCP Server  
-curl http://localhost:8002/mcp    # Catalyst Center MCP Server
-curl http://localhost:8003/mcp    # IOS XE MCP Server
-curl http://localhost:8004/mcp    # ThousandEyes MCP Server
-curl http://localhost:8005/mcp    # ISE MCP Server
-curl http://localhost:8006/mcp    # Splunk MCP Server
-```
+> 💡 **Quick Tip**: Only configure the servers you actually need. Each server has detailed setup instructions in its individual README.
 
 ## 🎯 Deployment Options
 
-By default, `docker-compose up -d` will start all MCP servers. For selective deployment, use the included convenience script:
-
 ### Available Profiles
 
-| Profile | Description | Servers Deployed |
-|---------|-------------|------------------|
-| `all` | Deploy all servers | Meraki + NetBox + Catalyst Center + ThousandEyes + ISE + Splunk + IOS XE |
-| `meraki` | Deploy only Meraki server | Meraki MCP Server |
-| `netbox` | Deploy only NetBox server | NetBox MCP Server |
-| `catc` or `catalyst` | Deploy only Catalyst Center server | Catalyst Center MCP Server |
-| `thousandeyes` or `te` | Deploy only ThousandEyes server | ThousandEyes MCP Server |
-| `ise` | Deploy only ISE server | ISE MCP Server |
-| `splunk` | Deploy only Splunk server | Splunk MCP Server |
-| `ios-xe` | Deploy only IOS XE server | IOS XE MCP Server |
-| `cisco` | Deploy Cisco-focused servers | Meraki + Catalyst Center + ThousandEyes + ISE + IOS XE |
-| `network` | Deploy network management servers | Meraki + ThousandEyes + IOS XE |
-| `security` | Deploy security-focused servers | Catalyst Center + ISE |
-| `monitoring` | Deploy network monitoring servers | Meraki + Catalyst Center + ThousandEyes + Splunk |
-| `management` | Deploy traditional management servers | Meraki + Catalyst Center |
-| `docs` | Deploy documentation-focused servers | NetBox + Catalyst Center |
+| Profile | Description | Servers Deployed | Use Case |
+|---------|-------------|------------------|----------|
+| `all` | Deploy all servers | All 7 servers (8000-8006) | Complete infrastructure visibility |
+| `cisco` | Cisco-focused platforms | Meraki + Catalyst Center + ThousandEyes + ISE + IOS XE | Cisco-centric environments |
+| `monitoring` | Network monitoring | Meraki + Catalyst Center + ThousandEyes + Splunk | Operations teams |
+| `security` | Security-focused | Catalyst Center + ISE | Security operations |
+| `management` | Traditional management | Meraki + Catalyst Center | Network management |
+| `docs` | Documentation-focused | NetBox + Catalyst Center | Infrastructure documentation |
 
 ### Deployment Examples
 
 ```bash
-# Default Docker Compose behavior
-docker-compose up -d                         # Start all servers
-docker-compose down                          # Stop all servers
+# Flexible deployment using profiles
+./deploy.sh start all                        # Complete suite
+./deploy.sh start cisco                      # Cisco platforms only
+./deploy.sh start monitoring                 # Monitoring focus
+./deploy.sh start security                   # Security focus
 
-# Selective deployment using convenience script
-./deploy.sh start all                        # Start all servers
-./deploy.sh start meraki                     # Start only Meraki
-./deploy.sh start thousandeyes               # Start only ThousandEyes
-./deploy.sh start ios-xe                     # Start only IOS XE
-./deploy.sh start cisco                      # Start Cisco-focused (Meraki + CatC + TE + IOS XE)
-./deploy.sh start monitoring                 # Start monitoring (Meraki + CatC + ThousandEyes)
-./deploy.sh start network                    # Start network management (Meraki + TE + IOS XE)
-./deploy.sh start management                 # Start traditional management (Meraki + CatC)
-./deploy.sh start docs                       # Start NetBox + Catalyst Center
+# Individual servers
+./deploy.sh start meraki                     # Cloud management
+./deploy.sh start catc                       # Enterprise management
+./deploy.sh start ios-xe                     # Direct device access
 
 # Management operations
-./deploy.sh stop meraki                      # Stop only Meraki server
-./deploy.sh restart management               # Restart management servers
-./deploy.sh logs docs                        # View logs for documentation servers
-```
-
-### 🚀 Convenience Script (Recommended)
-
-For easier deployment management, use the included `deploy.sh` script:
-
-```bash
-# Make script executable (one-time setup)
-chmod +x deploy.sh
-
-# Easy deployment commands
-./deploy.sh start all          # Start all servers
-./deploy.sh start meraki       # Start only Meraki
-./deploy.sh start thousandeyes # Start only ThousandEyes
-./deploy.sh start ise          # Start only ISE
-./deploy.sh start cisco        # Start Cisco-focused servers
-./deploy.sh start security     # Start security-focused servers
-./deploy.sh start monitoring   # Start network monitoring servers
-./deploy.sh start management   # Start traditional management servers
-./deploy.sh start docs         # Start NetBox + Catalyst Center
-
-# Management commands
-./deploy.sh status all         # Check status
-./deploy.sh logs meraki        # View logs
-./deploy.sh stop all           # Stop servers
-./deploy.sh restart meraki     # Restart specific server
-
-# Show all available options
-./deploy.sh help
+./deploy.sh status all                       # Check status
+./deploy.sh logs cisco                       # View logs
+./deploy.sh stop all                         # Stop services
 ```
 
 ## 💻 Usage
 
 ### 🤖 Example Prompts
 
-Here's a real-world example of how to interact with the MCP servers using natural language in AI assistants like Cursor or LibreChat:
+Here's a real-world example of how to interact with the MCP servers using natural language:
 
 #### **Network Troubleshooting Example**
 
@@ -356,308 +168,45 @@ Check why wlsn-access-1.dna.its-best.ch is unreachable from Cisco Catalyst Cente
 ```
 
 **AI Assistant Response:**
-The AI assistant automatically uses both MCP servers working together to investigate:
+The AI assistant automatically uses both MCP servers working together:
 
-1. **Catalyst Center MCP Server** - Checks device status and issues:
-   ```
-   🔴 Status: Unreachable (Priority P1 Active Issue)
-   Device: Cisco Catalyst 9300-48UXM Switch
-   IP: 10.10.254.166 (expected)
-   Error: SNMP Connectivity Failed
-   ```
+1. **Catalyst Center MCP Server** - Checks device status and issues
+2. **IOS XE MCP Server** - Direct SSH access to verify physical layer  
+3. **Multi-Server Correlation** - AI correlates data to identify root cause
 
-2. **IOS XE MCP Server** - Direct SSH access to verify physical layer:
-   ```python
-   show_command("show cdp neighbors detail", "10.10.254.161")
-   show_command("show arp | include 10.10.254", "10.10.254.161")
-   # Discovers device is actually on 10.10.254.165, not .166
-   ```
-
-3. **Multi-Server Correlation** - AI correlates management system data with direct device access:
-   ```
-   ✅ Device is UP and operational (4 days uptime via SSH)
-   ✅ Physical connectivity confirmed via CDP from border switch
-   ✅ ARP table shows device at .165, not .166
-   ❌ IP address mismatch: Catalyst Center expects .166, device actually at .165
-   
-   Root Cause: Management IP mismatch in Catalyst Center inventory
-   ```
-
-**Resolution Provided:**
-- Update Catalyst Center device IP from 10.10.254.166 → 10.10.254.165
-- Verify SNMP credentials match
-- Re-sync device in Catalyst Center
+**Resolution Identified:**
+- ✅ Device is UP and operational (verified via SSH)
+- ✅ Physical connectivity confirmed via CDP
+- ❌ **Root Cause**: IP address mismatch in Catalyst Center inventory
+- 🔧 **Solution**: Update device IP and re-sync
 
 #### **More Example Prompts**
 
-| Scenario | Example Prompt | MCP Servers Used |
-|----------|----------------|------------------|
+| Scenario | Example Prompt | Servers Used |
+|----------|----------------|--------------|
 | **Device Configuration** | *"Configure VLAN 100 on all access switches in Building A"* | Catalyst Center + IOS XE |
-| **Network Health Check** | *"Show me the health status of all Meraki devices and any recent alerts"* | Meraki MCP Server |
-| **Performance Analysis** | *"Show me network latency and path visualization for our main website over the last 6 hours"* | ThousandEyes MCP Server |
-| **Security Compliance** | *"Show me all non-compliant devices in ISE and their current authorization profiles"* | ISE MCP Server |
-| **Infrastructure Audit** | *"Generate a report of all devices in NetBox that don't match Catalyst Center inventory"* | NetBox + Catalyst Center |
-| **Security Compliance** | *"Check which devices have outdated firmware and create a compliance report"* | All servers |
-| **Capacity Planning** | *"Show me bandwidth utilization trends for the last 30 days across all sites"* | Meraki + Catalyst Center |
-
-#### **AI Integration Benefits**
-
-- **🧠 Natural Language**: Ask questions in plain English instead of learning complex APIs
-- **🔍 Cross-Platform Correlation**: AI automatically queries multiple systems to provide comprehensive answers
-- **📊 Intelligent Analysis**: AI correlates data from different sources to identify root causes
-- **⚡ Rapid Troubleshooting**: Get detailed technical analysis in seconds instead of manual investigation
-- **📝 Automated Documentation**: Generate reports combining real-time data with infrastructure documentation
-- **✅ Real Working Example**: The demo above shows actual production data from both Catalyst Center and direct IOS XE device access being analyzed through LibreChat
+| **Performance Analysis** | *"Show me network latency for our main website over the last 6 hours"* | ThousandEyes |
+| **Security Compliance** | *"Show me all non-compliant devices and their authorization profiles"* | ISE + Catalyst Center |
+| **Infrastructure Audit** | *"Generate a report of devices that don't match between NetBox and reality"* | NetBox + Catalyst Center |
+| **Capacity Planning** | *"Show me bandwidth utilization trends across all sites"* | Meraki + Catalyst Center |
 
 ### 🌐 Server Endpoints
 
-All MCP servers provide standardized endpoints for integration:
+| Server | Port | Endpoint | Purpose |
+|--------|------|----------|---------|
+| Meraki | 8000 | `http://localhost:8000/mcp` | Cloud network management |
+| NetBox | 8001 | `http://localhost:8001/mcp` | DCIM/IPAM documentation |
+| Catalyst Center | 8002 | `http://localhost:8002/mcp` | Enterprise management |
+| IOS XE | 8003 | `http://localhost:8003/mcp` | Direct device access |
+| ThousandEyes | 8004 | `http://localhost:8004/mcp` | Performance monitoring |
+| ISE | 8005 | `http://localhost:8005/mcp` | Identity & access control |
+| Splunk | 8006 | `http://localhost:8006/mcp` | Log analysis |
 
-- **Meraki MCP Server**: `http://localhost:8000/mcp` (or `http://meraki-mcp-server:8000/mcp` within Docker network)
-- **NetBox MCP Server**: `http://localhost:8001/mcp` (or `http://netbox-mcp-server:8001/mcp` within Docker network)
-- **Catalyst Center MCP Server**: `http://localhost:8002/mcp` (or `http://catc-mcp-server:8002/mcp` within Docker network)
-- **IOS XE MCP Server**: `http://localhost:8003/mcp` (or `http://ios-xe-mcp-server:8003/mcp` within Docker network)
-- **ThousandEyes MCP Server**: `http://localhost:8004/mcp` (or `http://thousandeyes-mcp-server:8004/mcp` within Docker network)
-- **ISE MCP Server**: `http://localhost:8005/mcp` (or `http://ise-mcp-server:8005/mcp` within Docker network)
-- **Splunk MCP Server**: `http://localhost:8006/mcp` (or `http://splunk-mcp-server:8006/mcp` within Docker network)
+## 🌐 MCP Client Integration
 
-### ⚙️ Configuration Options
+### Cursor IDE Configuration
 
-### Environment Variables
-
-#### Meraki MCP Server Variables:
-
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `MERAKI_KEY` | Meraki Dashboard API key | - | ✅ Yes |
-| `MCP_ROLE` | Access control role (noc/sysadmin/all) | `noc` | No |
-| `MERAKI_MCP_PORT` | Host port mapping for Meraki server | `8000` | No |
-| `MERAKI_BASE_URL` | Meraki API base URL | `https://api.meraki.com/api/v1` | No |
-
-#### NetBox MCP Server Variables:
-
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `NETBOX_URL` | NetBox instance URL | - | ✅ Yes |
-| `NETBOX_TOKEN` | NetBox API token | - | ✅ Yes |
-| `NETBOX_MCP_PORT` | Host port mapping for NetBox server | `8001` | No |
-
-#### Catalyst Center MCP Server Variables:
-
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `CATC_URL` | Catalyst Center URL | - | ✅ Yes |
-| `CATC_USERNAME` | Catalyst Center username | - | ✅ Yes |
-| `CATC_PASSWORD` | Catalyst Center password | - | ✅ Yes |
-| `CATC_MCP_PORT` | Host port mapping for Catalyst Center server | `8002` | No |
-
-#### IOS XE MCP Server Variables:
-
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `MCP_HOST` | Server bind host | `0.0.0.0` | No |
-| `MCP_PORT` | Server port | `8003` | No |
-| `LOG_LEVEL` | Logging level | `INFO` | No |
-
-> **Note**: IOS XE MCP Server does not require stored credentials. Device credentials (host, username, password) are provided with each API call for enhanced security.
-
-### Access Control Roles
-
-- **`noc`**: Network Operations Center - monitoring + firmware upgrades
-- **`sysadmin`**: System Administrator - read-only access
-- **`all`**: Full API access (firehose mode)
-
-## 📊 Docker Commands
-
-### Basic Operations
-
-```bash
-# Start services (all servers by default)
-docker-compose up -d                             # All servers
-docker-compose up -d meraki-mcp-servers          # Meraki only
-docker-compose up -d netbox-mcp-server           # NetBox only
-docker-compose up -d catc-mcp-server             # Catalyst Center only
-docker-compose up -d ios-xe-mcp-server           # IOS XE only
-
-# Stop services
-docker-compose down                              # All servers
-docker-compose stop meraki-mcp-servers          # Meraki only
-docker-compose stop netbox-mcp-server           # NetBox only
-docker-compose stop ios-xe-mcp-server           # IOS XE only
-
-# Restart services
-docker-compose restart                           # All servers
-docker-compose restart meraki-mcp-servers       # Specific server
-
-# View logs
-docker-compose logs meraki-mcp-servers          # Specific server
-docker-compose logs                              # All running servers
-
-# Follow logs in real-time
-docker-compose logs -f meraki-mcp-servers       # Specific server
-docker-compose logs -f                           # All running servers
-
-# Check service status
-docker-compose ps                                # All containers
-
-# Check resource usage
-docker stats meraki-mcp-server                  # Specific server
-docker stats                                     # All running containers
-```
-
-### Development Operations
-
-```bash
-# Rebuild image after code changes
-docker-compose build                            # All servers
-docker-compose build meraki-mcp-servers         # Specific server
-
-# Rebuild and restart
-docker-compose up -d --build                    # All servers
-docker-compose up -d --build meraki-mcp-servers # Meraki only
-
-# Run without cache
-docker-compose build --no-cache                 # All servers
-docker-compose build --no-cache meraki-mcp-servers # Specific server
-
-# Shell into running container
-docker-compose exec meraki-mcp-servers /bin/bash
-docker-compose exec netbox-mcp-server /bin/bash
-docker-compose exec catc-mcp-server /bin/bash
-
-# Run one-off commands
-docker-compose run --rm meraki-mcp-servers python --version
-docker-compose run --rm netbox-mcp-server python --version
-```
-
-### Maintenance Operations
-
-```bash
-# Update base images
-docker-compose pull
-
-# Clean up unused images
-docker system prune
-
-# View container resource usage
-docker stats
-
-# Export logs
-docker-compose logs meraki-mcp-server > meraki-server.log
-```
-
-## 🌐 Network Access
-
-### Quick Start: MCP Client Configuration
-
-| **MCP Client** | **Configuration File** | **Port Range** |
-|---|---|---|
-| **Cursor IDE** | `~/.cursor/mcp.json` | 8000-8006 |
-| **LibreChat** | `librechat.yaml` | 8000-8006 |
-| **Custom Client** | HTTP transport to `localhost:PORT/mcp` | 8000-8006 |
-
-### MCP Client Integration
-
-For seamless integration with MCP clients (Cursor, LibreChat, etc.), all MCP servers can run on the same Docker network using Docker Compose override files.
-
-#### Network Configuration for MCP Clients
-
-The MCP servers can be configured to use a custom network using `docker-compose.override.yml`:
-
-```yaml
-# docker-compose.override.yml for MCP servers
-services:
-  meraki-mcp-servers:
-    networks: ['demo']
-  netbox-mcp-server:
-    networks: ['demo']
-  catc-mcp-server:
-    networks: ['demo']
-  ios-xe-mcp-server:
-    networks: ['demo']
-networks:
-  demo:
-    external: true
-```
-
-#### Example: LibreChat Integration
-
-If using LibreChat specifically, configure it to use the same network by creating a `docker-compose.override.yml` in your LibreChat project:
-
-```yaml
-# docker-compose.override.yml for LibreChat
-services:
-  api:
-    networks: ['demo']
-  mongodb:
-    networks: ['demo']
-  meilisearch:
-    networks: ['demo']
-  vectordb:
-    networks: ['demo']
-  rag_api:
-    networks: ['demo']
-networks:
-  demo:
-    external: true
-```
-
-#### Example Setup Steps for LibreChat
-
-1. **Create the shared network:**
-   ```bash
-   docker network create -d bridge demo
-   ```
-
-2. **Deploy MCP servers with custom network:**
-   ```bash
-   # Copy network configuration
-   cp docker-compose.override.yml.example docker-compose.override.yml
-   
-   # Start MCP servers on custom network
-   ./deploy.sh start all
-   ```
-
-3. **Configure your MCP client** (Cursor, LibreChat, etc.) to connect to the servers
-
-4. **For LibreChat specifically**, add MCP servers to your `librechat.yaml`:
-   ```yaml
-   mcpServers:
-     Meraki-MCP-Server:
-       type: streamable-http
-       url: http://meraki-mcp-server:8000/mcp
-       timeout: 60000
-     Netbox-MCP-Server:
-       type: streamable-http
-       url: http://netbox-mcp-server:8001/mcp
-       timeout: 60000
-     CatC-MCP-Server:
-       type: streamable-http
-       url: http://catc-mcp-server:8002/mcp
-       timeout: 60000
-     IOS-XE-MCP-Server:
-       type: streamable-http
-       url: http://ios-xe-mcp-server:8003/mcp
-       timeout: 60000
-     ThousandEyes-MCP-Server:
-       type: streamable-http
-       url: http://thousandeyes-mcp-server:8004/mcp
-       timeout: 60000
-     ISE-MCP-Server:
-       type: streamable-http
-       url: http://ise-mcp-server:8005/mcp
-       timeout: 60000
-     Splunk-MCP-Server:
-       type: streamable-http
-       url: http://splunk-mcp-server:8006/mcp
-       timeout: 60000
-   ```
-
-5. **Restart your MCP client** to load the new MCP server configurations
-
-#### Example: Cursor IDE Integration
-
-For **Cursor IDE**, create or update your `~/.cursor/mcp.json` file:
+Create or update `~/.cursor/mcp.json`:
 
 ```json
 {
@@ -668,17 +217,17 @@ For **Cursor IDE**, create or update your `~/.cursor/mcp.json` file:
       "timeout": 60000
     },
     "NetBox-MCP-Server": {
-      "transport": "http",
+      "transport": "http", 
       "url": "http://localhost:8001/mcp",
       "timeout": 60000
     },
     "Catalyst-Center-MCP-Server": {
       "transport": "http",
-      "url": "http://localhost:8002/mcp",
+      "url": "http://localhost:8002/mcp", 
       "timeout": 60000
     },
     "IOS-XE-MCP-Server": {
-      "transport": "http", 
+      "transport": "http",
       "url": "http://localhost:8003/mcp",
       "timeout": 60000
     },
@@ -696,226 +245,177 @@ For **Cursor IDE**, create or update your `~/.cursor/mcp.json` file:
       "transport": "http",
       "url": "http://localhost:8006/mcp",
       "timeout": 60000
-    }    
+    }
   }
 }
 ```
 
-> **💡 Pro Tips:**
-> - **Cursor**: Restart Cursor after updating `mcp.json`
-> - **LibreChat**: Use the web interface to restart the service
-> - **All Clients**: Check logs if servers don't appear in the client
+### LibreChat Configuration  
 
-### Local Development Access
+Add to your `librechat.yaml`:
 
-For local testing and development, all servers are accessible on the host at:
-
-```bash
-# Test MCP server availability
-curl http://localhost:8000/mcp    # Meraki MCP Server
-curl http://localhost:8001/mcp    # NetBox MCP Server  
-curl http://localhost:8002/mcp    # Catalyst Center MCP Server
-curl http://localhost:8003/mcp    # IOS XE MCP Server
-curl http://localhost:8004/mcp    # ThousandEyes MCP Server
-curl http://localhost:8005/mcp    # ISE MCP Server
-curl http://localhost:8006/mcp    # Splunk MCP Server
+```yaml
+mcpServers:
+  Meraki-MCP-Server:
+    type: streamable-http
+    url: http://meraki-mcp-server:8000/mcp
+    timeout: 60000
+  Netbox-MCP-Server:
+    type: streamable-http
+    url: http://netbox-mcp-server:8001/mcp
+    timeout: 60000
+  CatC-MCP-Server:
+    type: streamable-http
+    url: http://catc-mcp-server:8002/mcp
+    timeout: 60000
+  IOS-XE-MCP-Server:
+    type: streamable-http
+    url: http://ios-xe-mcp-server:8003/mcp
+    timeout: 60000
+  ThousandEyes-MCP-Server:
+    type: streamable-http
+    url: http://thousandeyes-mcp-server:8004/mcp
+    timeout: 60000
+  ISE-MCP-Server:
+    type: streamable-http
+    url: http://ise-mcp-server:8005/mcp
+    timeout: 60000
+  Splunk-MCP-Server:
+    type: streamable-http
+    url: http://splunk-mcp-server:8006/mcp
+    timeout: 60000
 ```
 
-### Network Isolation Benefits
+## 🔧 Management Commands
 
-- **Security**: Network isolation between different environments
-- **Service Discovery**: Containers can communicate using service names
-- **Scalability**: Easy to add more services to the same network
-- **Flexibility**: Different networks for development, staging, and production
+### Basic Operations
+
+```bash
+# Deploy services
+./deploy.sh start all          # All servers
+./deploy.sh start cisco        # Cisco platforms
+./deploy.sh start monitoring   # Monitoring focused
+
+# Check status
+./deploy.sh status all         # All services
+docker-compose ps              # Docker status
+
+# View logs  
+./deploy.sh logs all           # All services
+./deploy.sh logs meraki        # Specific server
+
+# Stop services
+./deploy.sh stop all           # All services
+docker-compose down            # Docker stop
+
+# Update and rebuild
+git pull                       # Get updates
+docker-compose up -d --build   # Rebuild and restart
+```
+
+### Quick Verification
+
+```bash
+# Test all servers are responding
+curl http://localhost:8000/mcp    # Meraki
+curl http://localhost:8001/mcp    # NetBox
+curl http://localhost:8002/mcp    # Catalyst Center
+curl http://localhost:8003/mcp    # IOS XE
+curl http://localhost:8004/mcp    # ThousandEyes
+curl http://localhost:8005/mcp    # ISE
+curl http://localhost:8006/mcp    # Splunk
+```
 
 ## 🔒 Security Considerations
 
 ### Container Security
-
 - ✅ Runs as non-root user
 - ✅ Security options enabled (`no-new-privileges`)
 - ✅ Resource limits configured
 - ✅ Network isolation via Docker networks
 
-### Network Security
-
-- 🔒 API key never stored in image
-- 🔒 Environment variable isolation
-- 🔒 Network isolation via Docker networks
-
 ### Production Security
+- 🔒 API keys loaded from environment variables only
+- 🔒 Network isolation via Docker networks
+- 🔒 Role-based access control (where supported)
 
-For production deployments:
-
-1. **Use secrets management**:
-   ```bash
-   # Use Docker secrets instead of environment variables
-   echo "your_api_key" | docker secret create meraki_key -
-   ```
-
-2. **Firewall configuration**:
-   ```bash
-   # Only allow specific IPs
-   iptables -A INPUT -p tcp --dport 8000 -s trusted_ip -j ACCEPT
-   ```
-
-## 📊 Monitoring and Logging
-
-### Logging Configuration
-
-Logs are configured with rotation to prevent disk space issues:
-
-```yaml
-logging:
-  driver: "json-file"
-  options:
-    max-size: "10m"  # Maximum log file size
-    max-file: "3"    # Number of rotated files
-```
-
-### External Monitoring
-
-For production monitoring, consider integrating with:
-
-- **Prometheus**: Metrics collection
-- **Grafana**: Visualization
-- **ELK Stack**: Log aggregation
+For production deployments, consider:
+1. **Secrets Management**: Use Docker secrets or external secret managers
+2. **Network Security**: Implement proper firewall rules and network segmentation
+3. **Monitoring**: Set up comprehensive logging and monitoring
+4. **Updates**: Regular security updates and vulnerability scanning
 
 ## 🔧 Troubleshooting
 
 ### Common Issues
 
-#### Container Won't Start
-
+**Servers not responding:**
 ```bash
+# Check if containers are running
+./deploy.sh status all
+
 # Check logs for errors
-docker-compose logs meraki-mcp-server
+./deploy.sh logs all
 
-# Common causes:
-# 1. Missing MERAKI_KEY
-# 2. Port 8000 already in use
-# 3. Invalid API key
+# Restart problematic services
+./deploy.sh restart <profile>
 ```
 
-#### Can't Access Server
-
+**MCP clients can't connect:**
 ```bash
-# Check if container is running
-docker-compose ps
+# Verify endpoints are accessible
+curl http://localhost:8000/mcp
 
-# Check port mapping
-docker port meraki-mcp-server
+# Check network connectivity
+docker network ls
+docker network inspect <network_name>
+
+# Restart MCP client (Cursor, LibreChat, etc.)
 ```
 
-#### Permission Issues
+**Configuration issues:**
+- Check individual server READMEs for detailed troubleshooting
+- Verify API credentials and permissions
+- Check network connectivity to target systems
+
+## 📊 Monitoring and Maintenance
+
+### Health Checks
 
 ```bash
-# Check file permissions
-ls -la openapi/
+# Check all services
+./deploy.sh status all
 
-# Fix permissions if needed
-chmod 644 openapi/spec3.json
+# Monitor resource usage
+docker stats
+
+# View recent logs
+./deploy.sh logs all | tail -100
 ```
 
-### Debug Mode
-
-Enable debug logging:
+### Updates
 
 ```bash
-# Add to .env file
-LOG_LEVEL=DEBUG
-
-# Restart container
-docker-compose restart
-```
-
-### Performance Issues
-
-Monitor resource usage:
-
-```bash
-# Check container resources
-docker stats meraki-mcp-server
-
-# Adjust limits in docker-compose.yml
-```
-
-## 🔄 Updates and Maintenance
-
-### Updating the Application
-
-```bash
-# Pull latest code
+# Pull latest changes
 git pull
 
 # Rebuild and restart
 docker-compose up -d --build
 
 # Clean up old images
-docker image prune
-```
-
-### Backup and Recovery
-
-```bash
-# Backup configuration
-cp .env .env.backup
-cp docker-compose.yml docker-compose.yml.backup
-
-# Export container (if needed)
-docker export meraki-mcp-server > meraki-backup.tar
-```
-
-## 🏗️ Advanced Deployment
-
-### Enterprise Deployment Considerations
-
-> **Note:** The following are recommendations for those adapting this example code for enterprise use. Additional security review and testing would be required.
-
-1. **Use Docker Swarm or Kubernetes** for orchestration
-2. **Set up monitoring** and alerting
-3. **Configure log aggregation**
-4. **Implement backup strategies**
-5. **Use secrets management**
-
-### Scaling
-
-For high availability:
-
-```bash
-# Scale to multiple replicas (requires load balancer)
-docker-compose up -d --scale meraki-mcp-server=3
-```
-
-## 📈 Performance Optimization
-
-### Resource Tuning
-
-Adjust resource limits based on your needs:
-
-```yaml
-deploy:
-  resources:
-    limits:
-      memory: 1G      # Increase for large deployments
-      cpus: '1.0'     # Increase for high load
-    reservations:
-      memory: 512M
-      cpus: '0.5'
+docker system prune -f
 ```
 
 ## 🤝 Contributing
 
 Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
-### Development
-
-For development contributions:
+### Development Workflow
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Make your changes
-4. Test your changes with `docker-compose up -d --build`
+4. Test with `docker-compose up -d --build`
 5. Commit your changes (`git commit -m 'Add some amazing feature'`)
 6. Push to the branch (`git push origin feature/amazing-feature`)
 7. Open a Pull Request
@@ -923,41 +423,6 @@ For development contributions:
 ## 📄 License
 
 This project is licensed under the Cisco Sample Code License, Version 1.1 - see the [LICENSE](LICENSE) file for details.
-
-## 💬 Support
-
-### Cursor IDE MCP Troubleshooting
-
-If MCP servers aren't appearing in Cursor:
-
-```bash
-# 1. Check MCP configuration file exists
-ls -la ~/.cursor/mcp.json
-
-# 2. Validate JSON syntax
-cat ~/.cursor/mcp.json | python -m json.tool
-
-# 3. Verify server accessibility  
-curl -X POST http://localhost:8000/mcp  # Meraki
-curl -X POST http://localhost:8001/mcp  # NetBox
-curl -X POST http://localhost:8002/mcp  # Catalyst Center
-curl -X POST http://localhost:8003/mcp  # IOS XE
-curl -X POST http://localhost:8004/mcp  # ThousandEyes
-curl -X POST http://localhost:8005/mcp  # ISE
-curl -X POST http://localhost:8006/mcp  # Splunk
-
-# 4. Check all servers are running
-./deploy.sh status all
-
-# 5. Restart Cursor completely and check logs
-```
-
-For support and questions:
-
-1. Check the logs: `docker-compose logs meraki-mcp-server`
-2. Review configuration: Check your service-specific `.env` files for API keys and settings
-3. Monitor resources: `docker stats`
-4. Open an issue on GitHub for bugs or feature requests
 
 ## 🙏 Acknowledgments
 

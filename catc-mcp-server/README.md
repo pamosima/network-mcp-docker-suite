@@ -62,16 +62,48 @@ This MCP server provides **complete** API-based access to Cisco Catalyst Center 
 
 ### Environment Variables
 
-```bash
-# Catalyst Center API Configuration
-CATC_URL=https://catalyst-center.example.com  # Required: Catalyst Center URL
-CATC_USERNAME=your_catalyst_center_username   # Required: Catalyst Center username
-CATC_PASSWORD=your_catalyst_center_password   # Required: Catalyst Center password
+Create a `.env` file in the `catc-mcp-server/` directory:
 
-# MCP Server Configuration
-MCP_HOST=localhost                            # Optional: Host for MCP server
-MCP_PORT=8002                                # Optional: Port for MCP server
+```bash
+# Copy the environment template
+cp .env.example .env
 ```
+
+**Required Configuration:**
+```bash
+# Catalyst Center API Configuration (Required)
+CATC_URL=https://catalyst-center.example.com  # Your Catalyst Center URL (include https://)
+CATC_USERNAME=your_catalyst_center_username   # Catalyst Center username with API access
+CATC_PASSWORD=your_catalyst_center_password   # Catalyst Center password
+
+# MCP Server Configuration (Optional)
+MCP_HOST=localhost                            # Host for MCP server (default: localhost)
+MCP_PORT=8002                                # Port for MCP server (default: 8002)
+```
+
+### Catalyst Center Prerequisites
+
+**User Requirements:**
+1. **API Access**: Ensure API access is enabled in Catalyst Center
+2. **RBAC Permissions**: User account needs appropriate permissions:
+   - **Observer**: Read-only access to devices and networks
+   - **Operator**: Device management and configuration
+   - **Administrator**: Full system access (recommended for full functionality)
+
+**Network Requirements:**
+1. **Connectivity**: Ensure network connectivity from Docker host to Catalyst Center
+2. **DNS Resolution**: Catalyst Center URL must be resolvable
+3. **Certificate Trust**: For HTTPS connections (most deployments)
+
+### Environment Variable Reference
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `CATC_URL` | Catalyst Center URL (include https://) | - | ✅ Yes |
+| `CATC_USERNAME` | Catalyst Center username | - | ✅ Yes |
+| `CATC_PASSWORD` | Catalyst Center password | - | ✅ Yes |
+| `MCP_HOST` | Host for MCP server | `localhost` | No |
+| `MCP_PORT` | Port for MCP server | `8002` | No |
 
 ### Catalyst Center Prerequisites
 
@@ -196,20 +228,32 @@ docker run -d --name catc-mcp-server \
 
 ### Docker Compose
 
+Add to your `docker-compose.yml` file:
+
 ```yaml
 services:
   catc-mcp-server:
-    build: .
+    build: ./catc-mcp-server
     container_name: catc-mcp-server
+    env_file:
+      - ./catc-mcp-server/.env
     environment:
-      - CATC_URL=${CATC_URL}
-      - CATC_USERNAME=${CATC_USERNAME}
-      - CATC_PASSWORD=${CATC_PASSWORD}
       - MCP_HOST=0.0.0.0
       - MCP_PORT=8002
     ports:
       - "8002:8002"
     restart: unless-stopped
+    networks:
+      - default
+```
+
+**Or use the main project's deployment:**
+```bash
+# From project root  
+./deploy.sh start catc          # Deploy only Catalyst Center server
+./deploy.sh start cisco         # Deploy Cisco platforms (includes Catalyst Center)
+./deploy.sh start management    # Deploy Meraki + Catalyst Center
+./deploy.sh start all           # Deploy all servers including Catalyst Center
 ```
 
 ### Logs and Debugging
@@ -282,31 +326,66 @@ mcpServers:
 
 ### Common Issues
 
+**Container Won't Start:**
+```bash
+# Check logs for errors
+docker logs catc-mcp-server
+
+# Common causes:
+# 1. Missing CATC_URL, CATC_USERNAME, or CATC_PASSWORD in .env file
+# 2. Port 8002 already in use (check: lsof -i :8002)
+# 3. Invalid Catalyst Center URL format (must include https://)
+# 4. Network connectivity issues to Catalyst Center
+```
+
 **Authentication Errors:**
 ```bash
-# Test Catalyst Center connectivity
+# Test Catalyst Center authentication
 curl -k -X POST "https://catalyst-center.example.com/api/system/v1/auth/login" \
   -H "Content-Type: application/json" \
-  -d '{"username":"user","password":"pass"}'
+  -d '{"username":"YOUR_USERNAME","password":"YOUR_PASSWORD"}'
+
+# Expected response: JWT token
+# Error responses: 401 Unauthorized, 403 Forbidden
 ```
 
 **Network Connectivity:**
 ```bash
-# Test network connectivity
+# Test basic connectivity
 ping catalyst-center.example.com
 telnet catalyst-center.example.com 443
+
+# Test from container (if needed)
+docker exec catc-mcp-server ping catalyst-center.example.com
+```
+
+**MCP Client Connection Issues:**
+```bash
+# Verify MCP endpoint is accessible
+curl http://localhost:8002/mcp
+
+# Should return MCP protocol response
+# If connection refused, check container status:
+docker ps | grep catc-mcp-server
 ```
 
 **SSL Certificate Issues:**
 ```bash
 # Test SSL connectivity  
 openssl s_client -connect catalyst-center.example.com:443
+
+# For self-signed certificates in corporate environments,
+# check container logs for SSL verification errors
 ```
 
 **Permission Issues:**
-- Verify user has appropriate RBAC permissions in Catalyst Center
+- Verify user has appropriate RBAC permissions in Catalyst Center:
+  - **Observer**: Minimum for read operations
+  - **Operator**: For device management operations
+  - **Administrator**: For full functionality
 - Check if API access is enabled for the user account
-- Ensure user is not locked or disabled
+- Ensure user account is not locked or disabled
+- Verify user has access to the specific network sites/devices
 
 ### Performance Optimization
 

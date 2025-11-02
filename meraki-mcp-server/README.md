@@ -63,16 +63,44 @@ This MCP server provides **comprehensive** API-based access to Cisco Meraki Dash
 
 ### Environment Variables
 
-```bash
-# Meraki API Configuration
-MERAKI_KEY=your_actual_meraki_api_key_here    # Required: Meraki Dashboard API key
-MERAKI_BASE_URL=https://api.meraki.com/api/v1 # Optional: Meraki API base URL
-MCP_ROLE=noc                                   # Optional: Access control role
+Create a `.env` file in the `meraki-mcp-server/` directory:
 
-# MCP Server Configuration  
-MCP_HOST=localhost                             # Optional: Host for MCP server
-MCP_PORT=8000                                  # Optional: Port for MCP server
+```bash
+# Copy the environment template
+cp .env.example .env
 ```
+
+**Required Configuration:**
+```bash
+# Meraki API Configuration (Required)
+MERAKI_KEY=your_actual_meraki_api_key_here    # Get from Meraki Dashboard > Organization > API & webhooks
+
+# Access Control (Optional)  
+MCP_ROLE=noc                                   # Options: noc, sysadmin, all (default: noc)
+
+# MCP Server Configuration (Optional)
+MCP_HOST=localhost                             # Host for MCP server (default: localhost)
+MCP_PORT=8000                                  # Port for MCP server (default: 8000)
+MERAKI_BASE_URL=https://api.meraki.com/api/v1 # Meraki API base URL (default: official API)
+```
+
+### Getting Meraki API Key
+
+1. **Login** to Meraki Dashboard
+2. **Navigate** to Organization > API & webhooks  
+3. **Generate** API key
+4. **Copy** the key to your `.env` file
+5. **Set appropriate permissions** (read-only for monitoring, read-write for configuration)
+
+### Environment Variable Reference
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `MERAKI_KEY` | Meraki Dashboard API key | - | ✅ Yes |
+| `MCP_ROLE` | Access control role (noc/sysadmin/all) | `noc` | No |
+| `MCP_HOST` | Host for MCP server | `localhost` | No |
+| `MCP_PORT` | Port for MCP server | `8000` | No |
+| `MERAKI_BASE_URL` | Meraki API base URL | `https://api.meraki.com/api/v1` | No |
 
 ### Access Roles
 
@@ -151,19 +179,30 @@ docker run -d --name meraki-mcp-server \
 
 ### Docker Compose
 
+Add to your `docker-compose.yml` file:
+
 ```yaml
 services:
   meraki-mcp-server:
-    build: .
+    build: ./meraki-mcp-server
     container_name: meraki-mcp-server
+    env_file:
+      - ./meraki-mcp-server/.env
     environment:
-      - MERAKI_KEY=${MERAKI_KEY}
-      - MCP_ROLE=noc
       - MCP_HOST=0.0.0.0
       - MCP_PORT=8000
     ports:
       - "8000:8000"
     restart: unless-stopped
+    networks:
+      - default
+```
+
+**Or use the main project's deployment:**
+```bash
+# From project root
+./deploy.sh start meraki        # Deploy only Meraki server
+./deploy.sh start all           # Deploy all servers including Meraki
 ```
 
 ### Logs and Debugging
@@ -206,23 +245,51 @@ mcpServers:
 
 ### Common Issues
 
+**Container Won't Start:**
+```bash
+# Check logs for errors
+docker logs meraki-mcp-server
+
+# Common causes:
+# 1. Missing MERAKI_KEY in .env file
+# 2. Port 8000 already in use (check: lsof -i :8000)
+# 3. Invalid API key format
+```
+
 **Invalid API Key:**
 ```bash
-# Check API key format and permissions
+# Test API key directly
 curl -L -H "X-Cisco-Meraki-API-Key: YOUR_KEY" \
   "https://api.meraki.com/api/v1/organizations"
+
+# Expected response: List of organizations
+# Error response: {"errors":["Invalid API key"]}
+```
+
+**MCP Client Connection Issues:**
+```bash
+# Verify MCP endpoint is accessible
+curl http://localhost:8000/mcp
+
+# Should return MCP protocol response
+# If connection refused, check container status:
+docker ps | grep meraki-mcp-server
 ```
 
 **Rate Limiting:**
 ```bash
-# Monitor API usage
-get_organization_api_requests(organization_id="123456")
+# Monitor API usage (via MCP client or direct API)
+curl -H "X-Cisco-Meraki-API-Key: YOUR_KEY" \
+  "https://api.meraki.com/api/v1/organizations/ORG_ID/apiRequests"
 ```
 
 **Network Connectivity:**
 ```bash
 # Test Meraki Dashboard connectivity
 curl -I https://api.meraki.com/api/v1/organizations
+
+# From inside container (if needed)
+docker exec meraki-mcp-server curl -I https://api.meraki.com/api/v1/organizations
 ```
 
 ### Performance Optimization

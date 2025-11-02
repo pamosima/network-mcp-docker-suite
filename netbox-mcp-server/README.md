@@ -63,15 +63,42 @@ This MCP server provides **complete** API-based access to NetBox capabilities, e
 
 ### Environment Variables
 
-```bash
-# NetBox API Configuration
-NETBOX_URL=https://netbox.example.com        # Required: NetBox instance URL
-NETBOX_TOKEN=your_netbox_token_here          # Required: NetBox API token
+Create a `.env` file in the `netbox-mcp-server/` directory:
 
-# MCP Server Configuration
-MCP_HOST=localhost                           # Optional: Host for MCP server  
-MCP_PORT=8001                               # Optional: Port for MCP server
+```bash
+# Copy the environment template
+cp .env.example .env
 ```
+
+**Required Configuration:**
+```bash
+# NetBox API Configuration (Required)
+NETBOX_URL=https://netbox.example.com        # Your NetBox instance URL
+NETBOX_TOKEN=your_netbox_token_here          # NetBox API token with appropriate permissions
+
+# MCP Server Configuration (Optional)
+MCP_HOST=localhost                           # Host for MCP server (default: localhost)
+MCP_PORT=8001                               # Port for MCP server (default: 8001)
+```
+
+### Getting NetBox API Token
+
+1. **Login** to NetBox web interface
+2. **Navigate** to your Profile (top right) → API Tokens
+3. **Create** new token with appropriate permissions:
+   - **Read**: For monitoring and documentation
+   - **Write**: For device provisioning and updates  
+   - **Delete**: For cleanup operations (use carefully)
+4. **Copy** the token to your `.env` file
+
+### Environment Variable Reference
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `NETBOX_URL` | NetBox instance URL (include https://) | - | ✅ Yes |
+| `NETBOX_TOKEN` | NetBox API token | - | ✅ Yes |
+| `MCP_HOST` | Host for MCP server | `localhost` | No |
+| `MCP_PORT` | Port for MCP server | `8001` | No |
 
 ### NetBox API Token
 
@@ -178,19 +205,31 @@ docker run -d --name netbox-mcp-server \
 
 ### Docker Compose
 
+Add to your `docker-compose.yml` file:
+
 ```yaml
 services:
   netbox-mcp-server:
-    build: .
+    build: ./netbox-mcp-server
     container_name: netbox-mcp-server
+    env_file:
+      - ./netbox-mcp-server/.env
     environment:
-      - NETBOX_URL=${NETBOX_URL}
-      - NETBOX_TOKEN=${NETBOX_TOKEN}
       - MCP_HOST=0.0.0.0
       - MCP_PORT=8001
     ports:
       - "8001:8001"
     restart: unless-stopped
+    networks:
+      - default
+```
+
+**Or use the main project's deployment:**
+```bash
+# From project root
+./deploy.sh start netbox        # Deploy only NetBox server
+./deploy.sh start docs          # Deploy NetBox + Catalyst Center
+./deploy.sh start all           # Deploy all servers including NetBox
 ```
 
 ### Logs and Debugging
@@ -263,11 +302,25 @@ mcpServers:
 
 ### Common Issues
 
+**Container Won't Start:**
+```bash
+# Check logs for errors
+docker logs netbox-mcp-server
+
+# Common causes:
+# 1. Missing NETBOX_URL or NETBOX_TOKEN in .env file
+# 2. Port 8001 already in use (check: lsof -i :8001)
+# 3. Invalid NetBox URL format (must include https://)
+```
+
 **Connection Errors:**
 ```bash
 # Test NetBox connectivity
 curl -H "Authorization: Token YOUR_TOKEN" \
   "https://netbox.example.com/api/"
+
+# Expected response: NetBox API information
+# Error response: Connection timeout/refused or 401 Unauthorized
 ```
 
 **Authentication Issues:**
@@ -275,12 +328,29 @@ curl -H "Authorization: Token YOUR_TOKEN" \
 # Verify API token permissions
 curl -H "Authorization: Token YOUR_TOKEN" \
   "https://netbox.example.com/api/users/me/"
+
+# Check token has required permissions (read/write/delete)
+curl -H "Authorization: Token YOUR_TOKEN" \
+  "https://netbox.example.com/api/users/tokens/"
+```
+
+**MCP Client Connection Issues:**
+```bash
+# Verify MCP endpoint is accessible
+curl http://localhost:8001/mcp
+
+# Should return MCP protocol response
+# If connection refused, check container status:
+docker ps | grep netbox-mcp-server
 ```
 
 **SSL Certificate Issues:**
 ```bash
 # Test SSL connectivity
 openssl s_client -connect netbox.example.com:443 -servername netbox.example.com
+
+# For self-signed certificates, you may need to configure trust
+# Check container logs for SSL verification errors
 ```
 
 ### Performance Optimization
