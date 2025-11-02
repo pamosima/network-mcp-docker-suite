@@ -5,7 +5,7 @@
 > **📚 Example Code for Learning & Development**  
 > This is a demonstration project showcasing MCP server implementations for network management. Intended for educational purposes, testing, and development environments.
 
-A comprehensive Docker-based suite of Model Context Protocol (MCP) servers for network infrastructure management. This example implementation provides Cisco Meraki Dashboard API, NetBox DCIM/IPAM, Cisco Catalyst Center, Cisco ThousandEyes, Cisco ISE, and IOS XE device management through containerized MCP servers. Designed for demonstration, learning, and integration with MCP clients like Cursor, LibreChat, and other MCP-enabled applications.
+Docker-based MCP server suite for **AIOps** - enabling AI-driven network operations through Cisco Meraki, Catalyst Center, IOS XE, ISE, ThousandEyes, Splunk & NetBox integration. AI-ready with LibreChat, Cursor, and other MCP clients for intelligent network management, automated troubleshooting, and operational insights.
 
 ## 🎬 Live Demo
 
@@ -17,7 +17,7 @@ AI-Powered Network Troubleshooting with LibreChat using Multiple MCP Servers
 
 ## 📋 Description
 
-This Docker suite contains seven example MCP servers for comprehensive network infrastructure management:
+This **AIOps-focused** Docker suite contains seven MCP servers enabling AI-driven network operations:
 
 - **Meraki MCP Server** (8000): Cloud network management through Meraki Dashboard API - [📖 Details](meraki-mcp-server/README.md)
 - **NetBox MCP Server** (8001): DCIM/IPAM infrastructure documentation and management - [📖 Details](netbox-mcp-server/README.md)
@@ -27,7 +27,7 @@ This Docker suite contains seven example MCP servers for comprehensive network i
 - **ISE MCP Server** (8005): Identity and access control operations - [📖 Details](ise-mcp-server/README.md)
 - **Splunk MCP Server** (8006): Log analysis and operational intelligence - [📖 Details](splunk-mcp-server/README.md)
 
-All servers are containerized using Docker with flexible deployment profiles, designed for development, testing, and demonstration environments with seamless integration across MCP clients.
+All servers are containerized with flexible deployment profiles, enabling **AIOps workflows** through natural language queries, automated troubleshooting, and intelligent network analytics via AI assistants.
 
 ## 🎯 Use Case
 
