@@ -11,7 +11,7 @@ A comprehensive Docker-based suite of Model Context Protocol (MCP) servers for n
 
 AI-Powered Network Troubleshooting with LibreChat using Multiple MCP Servers
 
-![Catalyst Center MCP Demo](img/CatC-MCP_demo.gif)
+![Catalyst Center MCP Demo](_img/CatC-MCP_demo.gif)
 
 *Watch how natural language queries automatically investigate and resolve network issues using both Catalyst Center MCP Server and IOS XE MCP Server. The AI assistant correlates data from management systems (Catalyst Center) with direct device access (IOS XE SSH) to identify root causes and provide comprehensive solutions.*
 
