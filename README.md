@@ -70,9 +70,12 @@ Network administrators and DevOps teams face significant challenges in managing 
 For comprehensive use case scenarios and implementation details, see:
 
 - **📖 [Detailed Use Case Analysis](USECASE.md)** - Complete business case, technical scenarios, and success metrics
-- **🔧 [IOS XE Server Guide](ios-xe-mcp-server/README.md)** - Specific documentation for direct device management capabilities
-- **📊 [ThousandEyes Server Guide](thousandeyes-mcp-server/README.md)** - Comprehensive network performance monitoring and analysis
-- **🔐 [ISE Server Guide](ise-mcp-server/README.md)** - Complete documentation for identity and access control operations
+- **☁️ [Meraki Server Guide](meraki-mcp-server/README.md)** - Cloud network management and Meraki Dashboard API integration
+- **📋 [NetBox Server Guide](netbox-mcp-server/README.md)** - DCIM/IPAM documentation and infrastructure management  
+- **🏢 [Catalyst Center Server Guide](catc-mcp-server/README.md)** - Enterprise network management and assurance operations
+- **🔧 [IOS XE Server Guide](ios-xe-mcp-server/README.md)** - Direct SSH-based device management capabilities
+- **📊 [ThousandEyes Server Guide](thousandeyes-mcp-server/README.md)** - Network performance monitoring and path visualization
+- **🔐 [ISE Server Guide](ise-mcp-server/README.md)** - Identity and access control operations
 - **📈 [Splunk Server Guide](splunk-mcp-server/README.md)** - Log analysis and operational intelligence monitoring
 - **🤝 [Contributing Guidelines](CONTRIBUTING.md)** - How to extend use cases and add new functionality
 
