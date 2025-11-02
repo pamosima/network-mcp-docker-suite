@@ -22,10 +22,10 @@ This Docker suite contains seven example MCP servers for comprehensive network i
 - **Meraki MCP Server**: Provides comprehensive access to Cisco Meraki Dashboard API functionality including device management, network monitoring, and configuration operations
 - **NetBox MCP Server**: Enables complete NetBox DCIM/IPAM capabilities for infrastructure documentation, IP address management, and device lifecycle tracking
 - **Catalyst Center MCP Server**: Delivers full Cisco Catalyst Center functionality including network device management, site topology, client analytics, and network assurance
+- **IOS XE MCP Server**: Enables direct SSH-based management of Cisco IOS XE devices including configuration changes, monitoring commands, and device information retrieval
 - **ThousandEyes MCP Server**: Provides comprehensive access to Cisco ThousandEyes v7 API for network performance monitoring, path visualization, dashboard data, and alert management
 - **ISE MCP Server**: Provides comprehensive access to Cisco Identity Services Engine (ISE) for network access control, policy management, user/device identity, and security operations
 - **Splunk MCP Server**: Provides log analysis and monitoring capabilities through Splunk's powerful search and analytics platform for operational intelligence and security monitoring
-- **IOS XE MCP Server**: Enables direct SSH-based management of Cisco IOS XE devices including configuration changes, monitoring commands, and device information retrieval
 
 All servers are containerized using Docker with flexible deployment profiles, designed for development, testing, and demonstration environments with seamless integration across MCP clients.
 
@@ -72,6 +72,8 @@ For comprehensive use case scenarios and implementation details, see:
 - **📖 [Detailed Use Case Analysis](USECASE.md)** - Complete business case, technical scenarios, and success metrics
 - **🔧 [IOS XE Server Guide](ios-xe-mcp-server/README.md)** - Specific documentation for direct device management capabilities
 - **📊 [ThousandEyes Server Guide](thousandeyes-mcp-server/README.md)** - Comprehensive network performance monitoring and analysis
+- **🔐 [ISE Server Guide](ise-mcp-server/README.md)** - Complete documentation for identity and access control operations
+- **📈 [Splunk Server Guide](splunk-mcp-server/README.md)** - Log analysis and operational intelligence monitoring
 - **🤝 [Contributing Guidelines](CONTRIBUTING.md)** - How to extend use cases and add new functionality
 
 
@@ -89,13 +91,13 @@ For comprehensive use case scenarios and implementation details, see:
 
 - Docker Engine 20.10+
 - Docker Compose 2.0+  
-- Valid Meraki Dashboard API key
+- Valid Meraki Dashboard API key (for Meraki MCP Server)
 - NetBox instance with API access (for NetBox MCP Server)
 - Cisco Catalyst Center with credentials (for Catalyst Center MCP Server)
+- Cisco IOS XE device with SSH access (for IOS XE MCP Server)
 - Cisco ThousandEyes with API v7 Bearer token (for ThousandEyes MCP Server)
 - Cisco ISE with ERS API enabled and credentials (for ISE MCP Server)
 - Splunk instance with Bearer token authentication (for Splunk MCP Server)
-- Cisco IOS XE device with SSH access (for IOS XE MCP Server)
 
 ### 🚀 Quick Start
 
@@ -126,6 +128,10 @@ nano netbox-mcp-server/.env
 cp catc-mcp-server/.env.example catc-mcp-server/.env
 nano catc-mcp-server/.env
 
+# For IOS XE MCP server (if using --profile ios-xe or --profile all)
+cp ios-xe-mcp-server/.env.example ios-xe-mcp-server/.env
+nano ios-xe-mcp-server/.env
+
 # For ThousandEyes MCP server (if using --profile thousandeyes or --profile all)
 cp thousandeyes-mcp-server/.env.example thousandeyes-mcp-server/.env
 nano thousandeyes-mcp-server/.env
@@ -137,10 +143,6 @@ nano ise-mcp-server/.env
 # For Splunk MCP server (if using --profile splunk or --profile all)
 cp splunk-mcp-server/.env.example splunk-mcp-server/.env
 nano splunk-mcp-server/.env
-
-# For IOS XE MCP server (if using --profile ios-xe or --profile all)
-cp ios-xe-mcp-server/.env.example ios-xe-mcp-server/.env
-nano ios-xe-mcp-server/.env
 ```
 
 > 💡 **Tip**: Only configure the `.env` files for the servers you plan to deploy. For example, if you only need Meraki integration, you only need to configure `meraki-mcp-server/.env`.
@@ -166,6 +168,17 @@ CATC_USERNAME=your_catalyst_center_username
 CATC_PASSWORD=your_catalyst_center_password
 ```
 
+**ios-xe-mcp-server/.env:**
+```bash
+# Optional default device settings (credentials can also be provided per API request)
+IOS_XE_HOST=switch.company.com
+IOS_XE_USERNAME=admin
+IOS_XE_PASSWORD=your_device_password
+MCP_HOST=0.0.0.0
+MCP_PORT=8003
+LOG_LEVEL=INFO
+```
+
 **thousandeyes-mcp-server/.env:**
 ```bash
 TE_TOKEN=your_thousandeyes_api_bearer_token_here
@@ -186,17 +199,6 @@ SPLUNK_HOST=splunk.company.com
 SPLUNK_PORT=8089
 SPLUNK_API_KEY=your_splunk_bearer_token_here
 SPLUNK_VERIFY_SSL=false
-```
-
-**ios-xe-mcp-server/.env:**
-```bash
-# Optional default device settings (credentials can also be provided per API request)
-IOS_XE_HOST=switch.company.com
-IOS_XE_USERNAME=admin
-IOS_XE_PASSWORD=your_device_password
-MCP_HOST=0.0.0.0
-MCP_PORT=8003
-LOG_LEVEL=INFO
 ```
 
 #### 3. Optional: Configure Custom Networks
