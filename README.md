@@ -85,31 +85,6 @@ For comprehensive use case scenarios and implementation details, see:
 
 The suite provides direct access to seven containerized MCP servers, perfect for development, testing, and AI-powered network operations:
 
-```mermaid
-graph TB
-    subgraph "Docker Host Environment"
-        Client[MCP Client<br/>Cursor/LibreChat/Claude Desktop]
-        
-        Client -->|:8000| Meraki[Meraki MCP Server<br/>Cloud Network Management]
-        Client -->|:8001| NetBox[NetBox MCP Server<br/>DCIM/IPAM]
-        Client -->|:8002| CatC[Catalyst Center MCP<br/>Enterprise Network]
-        Client -->|:8003| IOS[IOS XE MCP Server<br/>SSH Device Access]
-        Client -->|:8004| TE[ThousandEyes MCP<br/>Network Monitoring]
-        Client -->|:8005| ISE[ISE MCP Server<br/>Identity & Access]
-        Client -->|:8006| Splunk[Splunk MCP Server<br/>Log Analytics]
-    end
-    
-    style Client fill:#64B5F6,stroke:#1976D2,stroke-width:3px,color:#000
-    style Meraki fill:#FFB74D,stroke:#F57C00,stroke-width:2px,color:#000
-    style NetBox fill:#81C784,stroke:#388E3C,stroke-width:2px,color:#000
-    style CatC fill:#BA68C8,stroke:#7B1FA2,stroke-width:2px,color:#000
-    style IOS fill:#FFD54F,stroke:#F57F17,stroke-width:2px,color:#000
-    style TE fill:#4DD0E1,stroke:#0097A7,stroke-width:2px,color:#000
-    style ISE fill:#F06292,stroke:#C2185B,stroke-width:2px,color:#000
-    style Splunk fill:#AED581,stroke:#689F38,stroke-width:2px,color:#000
-```
-
-### 🔧 Network Topology
 
 ```
 ┌─────────────────┐    ┌──────────────────────────────────┐
