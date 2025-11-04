@@ -79,13 +79,82 @@ For comprehensive use case scenarios and implementation details, see:
 - **📈 [Splunk Server Guide](splunk-mcp-server/README.md)** - Log analysis and operational intelligence monitoring
 - **🤝 [Contributing Guidelines](CONTRIBUTING.md)** - How to extend use cases and add new functionality
 
+## 🏗️ Architecture
+
+### 📐 Deployment Architecture
+
+The suite provides direct access to seven containerized MCP servers, perfect for development, testing, and AI-powered network operations:
+
+```mermaid
+graph TB
+    subgraph "Docker Host Environment"
+        Client[MCP Client<br/>Cursor/LibreChat/Claude Desktop]
+        
+        Client -->|:8000| Meraki[Meraki MCP Server<br/>Cloud Network Management]
+        Client -->|:8001| NetBox[NetBox MCP Server<br/>DCIM/IPAM]
+        Client -->|:8002| CatC[Catalyst Center MCP<br/>Enterprise Network]
+        Client -->|:8003| IOS[IOS XE MCP Server<br/>SSH Device Access]
+        Client -->|:8004| TE[ThousandEyes MCP<br/>Network Monitoring]
+        Client -->|:8005| ISE[ISE MCP Server<br/>Identity & Access]
+        Client -->|:8006| Splunk[Splunk MCP Server<br/>Log Analytics]
+    end
+    
+    style Client fill:#e1f5fe
+    style Meraki fill:#fff3e0
+    style NetBox fill:#e8f5e9
+    style CatC fill:#f3e5f5
+    style IOS fill:#ffe0b2
+    style TE fill:#e0f2f1
+    style ISE fill:#fce4ec
+    style Splunk fill:#f1f8e9
+```
+
+### 🔧 Network Topology
+
+```
+┌─────────────────┐    ┌──────────────────────────────────┐
+│                 │    │          Docker Host             │
+│   MCP Client    │    │                                  │
+│                 │    │  ┌─────────────────────────────┐ │
+│ • Cursor IDE    │────┼─▶│ Meraki MCP        :8000     │ │
+│ • LibreChat     │    │  ├─────────────────────────────┤ │
+│ • Claude Desktop│────┼─▶│ NetBox MCP        :8001     │ │
+│ • Other MCP     │    │  ├─────────────────────────────┤ │
+│   Clients       │────┼─▶│ Catalyst Center   :8002     │ │
+│                 │    │  ├─────────────────────────────┤ │
+│                 │────┼─▶│ IOS XE MCP        :8003     │ │
+│                 │    │  ├─────────────────────────────┤ │
+│                 │────┼─▶│ ThousandEyes MCP  :8004     │ │
+│                 │    │  ├─────────────────────────────┤ │
+│                 │────┼─▶│ ISE MCP           :8005     │ │
+│                 │    │  ├─────────────────────────────┤ │
+│                 │────┼─▶│ Splunk MCP        :8006     │ │
+│                 │    │  └─────────────────────────────┘ │
+└─────────────────┘    └──────────────────────────────────┘
+        
+        Direct HTTP Connections
+        ✅ Simple setup - no authentication required
+        ✅ Individual server access and configuration
+        ✅ Flexible port-based deployment
+        ✅ Perfect for development and testing
+```
+
+### 🎯 Key Architecture Features
+
+- **🐳 Containerized Services**: Each MCP server runs in an isolated Docker container
+- **🔌 Standard MCP Protocol**: Compatible with any MCP client (Cursor, Claude Desktop, LibreChat)
+- **📊 Port-Based Access**: Each server on dedicated port (8000-8006)
+- **🔄 Independent Scaling**: Start/stop servers individually as needed
+- **🛡️ Network Isolation**: Internal Docker network for inter-container communication
+- **📝 Comprehensive Logging**: JSON-formatted logs with rotation for all services
+
 ## 🧩 Solution Components
 
-### 🏢 Architecture
+### 🏢 Technical Stack
 - **MCP Protocol Implementation**: Standards-based Model Context Protocol for AI integration
-- **Docker Containerization**: Well-structured containers with security considerations
-- **Network Isolation**: Secure communication via Docker networks
-- **Role-Based Access**: Configurable permission levels for different user types
+- **Docker Containerization**: Well-structured containers with security considerations and resource limits
+- **Network Isolation**: Secure communication via Docker networks (mcp-network)
+- **FastMCP Framework**: Modern Python-based MCP server implementation
 
 ## 🚀 Quick Start
 
