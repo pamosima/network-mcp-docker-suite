@@ -428,7 +428,7 @@ This project is licensed under the Cisco Sample Code License, Version 1.1 - see 
 
 Special thanks to:
 
-- **kiskander** for the original [Meraki MCP Server](https://github.com/kiskander/meraki-mcp-server) implementation. This project builds upon that foundation to provide a containerized, multi-server deployment solution.
+- **kiskander** for the original [Meraki MCP Server](https://github.com/kiskander/meraki-mcp-server) implementation that inspired the Meraki component of this comprehensive multi-server suite.
 
 - **tspuhler** for the IOS XE MCP Server implementation, providing direct SSH-based device management capabilities for Cisco IOS XE devices.
 
