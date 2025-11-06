@@ -6,8 +6,16 @@
 # - NetBox MCP Server: Network documentation and IPAM  
 # - Catalyst Center MCP Server: Cisco Catalyst Center integration
 # - IOS XE MCP Server: Direct device management via SSH
+# - ThousandEyes MCP Server: Network performance monitoring
+# - ISE MCP Server: Identity and access control
+# - Splunk MCP Server: Log analysis and SIEM
 #
-# Updated: 2025-10-14 - Added IOS XE MCP server support
+# Features:
+# - Enable/disable individual servers via .env file (ENABLE_*_MCP)
+# - Flexible deployment profiles (all, cisco, monitoring, security, etc.)
+# - Automatic filtering of disabled servers
+#
+# Updated: 2025-11-06 - Added .env integration for enable/disable control
 
 set -e
 
@@ -18,11 +26,96 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Load .env file if it exists
+if [ -f .env ]; then
+    # Load .env file, handling inline comments
+    while IFS= read -r line || [ -n "$line" ]; do
+        # Skip empty lines and comments
+        [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+        # Remove inline comments and export
+        line=$(echo "$line" | sed 's/#.*$//' | xargs)
+        [[ -n "$line" ]] && export "$line"
+    done < .env
+    echo -e "${BLUE}✅ Loaded configuration from .env${NC}"
+else
+    echo -e "${YELLOW}⚠️  No .env file found - all servers will be attempted${NC}"
+    echo -e "${YELLOW}   Copy .env.example to .env to configure which servers to enable${NC}"
+fi
+
+# Function to check if a server is enabled
+is_enabled() {
+    local server=$1
+    local var_name=""
+    
+    case $server in
+        "meraki-mcp-servers")
+            var_name="ENABLE_MERAKI_MCP"
+            ;;
+        "netbox-mcp-server")
+            var_name="ENABLE_NETBOX_MCP"
+            ;;
+        "catc-mcp-server")
+            var_name="ENABLE_CATC_MCP"
+            ;;
+        "ios-xe-mcp-server")
+            var_name="ENABLE_IOS_XE_MCP"
+            ;;
+        "thousandeyes-mcp-server")
+            var_name="ENABLE_THOUSANDEYES_MCP"
+            ;;
+        "ise-mcp-server")
+            var_name="ENABLE_ISE_MCP"
+            ;;
+        "splunk-mcp-server")
+            var_name="ENABLE_SPLUNK_MCP"
+            ;;
+    esac
+    
+    # If no .env file or variable not set, default to enabled
+    if [ -z "$var_name" ]; then
+        return 0
+    fi
+    
+    # Get the value of the enable variable
+    local enabled=$(eval echo \$$var_name)
+    
+    # Check if enabled (true, True, TRUE, 1, yes, Yes, YES)
+    if [[ "$enabled" =~ ^(true|True|TRUE|1|yes|Yes|YES)$ ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Function to filter enabled services
+filter_enabled_services() {
+    local services=$1
+    local enabled_services=""
+    local disabled_services=""
+    
+    for service in $services; do
+        if is_enabled $service; then
+            enabled_services="$enabled_services $service"
+        else
+            disabled_services="$disabled_services $service"
+        fi
+    done
+    
+    # Show disabled services if any
+    if [ -n "$disabled_services" ]; then
+        echo -e "${YELLOW}ℹ️  Skipping disabled servers:$disabled_services${NC}" >&2
+    fi
+    
+    echo $enabled_services
+}
+
 # Function to show usage
 show_usage() {
     echo -e "${BLUE}Network MCP Docker Suite - Deployment Helper${NC}"
     echo ""
     echo "Usage: $0 [COMMAND] [PROFILE]"
+    echo ""
+    echo -e "${YELLOW}Note: Only enabled servers in .env will start (ENABLE_*_MCP=true)${NC}"
     echo ""
     echo "Commands:"
     echo "  start     Start servers"
@@ -31,6 +124,7 @@ show_usage() {
     echo "  status    Show status"
     echo "  logs      Show logs"
     echo "  build     Build images"
+    echo "  cleanup   Stop and remove disabled servers"
     echo ""
     echo "Profiles:"
     echo "  all       All servers (Meraki + NetBox + Catalyst Center + ThousandEyes + ISE + IOS XE)"
@@ -47,19 +141,18 @@ show_usage() {
     echo "  docs      Documentation-focused (NetBox + Catalyst Center)"
     echo ""
     echo "Examples:"
-    echo "  $0 start all          # Start all servers"
-    echo "  $0 start meraki       # Start only Meraki server"
-    echo "  $0 start thousandeyes # Start only ThousandEyes server"
-    echo "  $0 start ise          # Start only ISE server"
-    echo "  $0 start ios-xe       # Start only IOS XE server"
-    echo "  $0 start splunk       # Start only Splunk server"
-    echo "  $0 start cisco        # Start Cisco-focused servers"
-    echo "  $0 start security     # Start security-focused servers"
+    echo "  $0 start all          # Start all enabled servers"
+    echo "  $0 start meraki       # Start only Meraki server (if enabled)"
+    echo "  $0 start cisco        # Start Cisco-focused servers (if enabled)"
+    echo "  $0 cleanup            # Stop and remove disabled servers"
     echo "  $0 stop all           # Stop all servers"
-    echo "  $0 logs thousandeyes  # Show ThousandEyes server logs"
-    echo "  $0 logs ise           # Show ISE server logs"
-    echo "  $0 logs ios-xe        # Show IOS XE server logs"
-    echo "  $0 logs splunk        # Show Splunk server logs"
+    echo "  $0 status all         # Show status of enabled servers"
+    echo "  $0 logs meraki        # Show Meraki server logs"
+    echo ""
+    echo "Workflow after disabling servers in .env:"
+    echo "  1. Edit .env and set ENABLE_*_MCP=false"
+    echo "  2. Run: $0 cleanup"
+    echo "  3. Run: $0 start all"
     echo ""
 }
 
@@ -133,13 +226,25 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
-# Build service arguments
-SERVICE_ARGS=$(build_service_args $PROFILE)
+# Build service arguments and filter for enabled services
+SERVICE_ARGS_RAW=$(build_service_args $PROFILE)
+SERVICE_ARGS=$(filter_enabled_services "$SERVICE_ARGS_RAW")
+
+# Check if any services are enabled
+if [ -z "$SERVICE_ARGS" ]; then
+    echo -e "${RED}❌ Error: No enabled servers for profile '$PROFILE'${NC}"
+    echo -e "${YELLOW}   Enable servers in .env file using ENABLE_*_MCP=true${NC}"
+    exit 1
+fi
 
 # Execute commands
 case $COMMAND in
     "start")
         echo -e "${GREEN}Starting MCP servers with profile: $PROFILE${NC}"
+        
+        # Count enabled servers
+        SERVER_COUNT=$(echo $SERVICE_ARGS | wc -w | tr -d ' ')
+        echo -e "${BLUE}📊 Starting $SERVER_COUNT enabled server(s)${NC}"
         
         # Special message for IOS XE server
         if [[ $SERVICE_ARGS == *"ios-xe-mcp-server"* ]]; then
@@ -152,7 +257,7 @@ case $COMMAND in
         else
             docker-compose up -d $SERVICE_ARGS
         fi
-        echo -e "${GREEN}Servers started successfully!${NC}"
+        echo -e "${GREEN}✅ Servers started successfully!${NC}"
         echo -e "${YELLOW}Use '$0 status $PROFILE' to check status${NC}"
         
         # Additional info for IOS XE server
@@ -194,6 +299,31 @@ case $COMMAND in
             docker-compose build $SERVICE_ARGS
         fi
         echo -e "${GREEN}Images built successfully!${NC}"
+        ;;
+    "cleanup")
+        echo -e "${YELLOW}🧹 Cleaning up disabled servers...${NC}"
+        
+        # Get all possible servers
+        ALL_SERVERS="meraki-mcp-servers netbox-mcp-server catc-mcp-server thousandeyes-mcp-server ise-mcp-server ios-xe-mcp-server splunk-mcp-server"
+        
+        STOPPED_COUNT=0
+        for service in $ALL_SERVERS; do
+            if ! is_enabled $service; then
+                # Check if container exists and is running
+                if docker ps -a --format '{{.Names}}' | grep -q "^${service}$"; then
+                    echo -e "${BLUE}  Stopping and removing: $service${NC}"
+                    docker stop $service 2>/dev/null || true
+                    docker rm $service 2>/dev/null || true
+                    STOPPED_COUNT=$((STOPPED_COUNT + 1))
+                fi
+            fi
+        done
+        
+        if [ $STOPPED_COUNT -eq 0 ]; then
+            echo -e "${GREEN}✅ No disabled servers are running${NC}"
+        else
+            echo -e "${GREEN}✅ Stopped and removed $STOPPED_COUNT disabled server(s)${NC}"
+        fi
         ;;
     "help"|"-h"|"--help")
         show_usage

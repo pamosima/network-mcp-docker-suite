@@ -1,12 +1,19 @@
 services:
   meraki-mcp-servers:
-    networks: ['demo']
+    networks: ['mcp-server']
   netbox-mcp-server:
-    networks: ['demo']
+    networks: ['mcp-server']
   catc-mcp-server:
-    networks: ['demo']
+    networks: ['mcp-server']
   ios-xe-mcp-server:
-    networks: ['demo']
+    networks: ['mcp-server']
+  thousandeyes-mcp-server:
+    networks: ['mcp-server']
+  ise-mcp-server:
+    networks: ['mcp-server']
+  splunk-mcp-server:
+    networks: ['mcp-server']
+
 networks:
-  demo:
+  mcp-server:
     external: true

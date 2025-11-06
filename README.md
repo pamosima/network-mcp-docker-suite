@@ -146,10 +146,12 @@ The suite provides direct access to seven containerized MCP servers, perfect for
 git clone https://github.com/pamosima/network-mcp-docker-suite.git
 cd network-mcp-docker-suite
 
-# 2. Configure servers you need (see individual server READMEs for details)
-cp meraki-mcp-server/.env.example meraki-mcp-server/.env    # For Meraki integration
-cp catc-mcp-server/.env.example catc-mcp-server/.env        # For Catalyst Center
-# ... configure other servers as needed
+# 2. Configure environment variables (single .env file for all servers)
+cp .env.example .env          # Copy the environment template
+nano .env                     # Edit and configure:
+                             # - Set ENABLE_*_MCP=false for servers you don't want to use
+                             # - Add API keys and credentials for enabled servers
+# See .env.example for detailed configuration instructions
 
 # 3. Deploy servers
 ./deploy.sh start all          # All servers
@@ -163,9 +165,32 @@ curl http://localhost:8000/mcp    # Test Meraki server
 curl http://localhost:8002/mcp    # Test Catalyst Center server
 ```
 
-> 💡 **Quick Tip**: Only configure the servers you actually need. Each server has detailed setup instructions in its individual README.
+> 💡 **Quick Tip**: All servers now use a single centralized `.env` file for configuration. Use `ENABLE_*_MCP=false` to disable servers you don't need, and only add credentials for enabled servers.
+
+> 🌐 **LibreChat Integration**: To use with LibreChat on an external network, see the [External Network Integration](#external-network-integration-for-librechat) section below.
 
 ## 🎯 Deployment Options
+
+### Managing Active Servers
+
+Control which MCP servers run using environment variables in your `.env` file:
+
+```bash
+# Enable/Disable individual servers (edit .env)
+ENABLE_MERAKI_MCP=true       # Set to false to disable
+ENABLE_NETBOX_MCP=true       # Set to false to disable
+ENABLE_CATC_MCP=true         # Set to false to disable
+ENABLE_IOS_XE_MCP=false      # Disabled - won't start
+ENABLE_THOUSANDEYES_MCP=true
+ENABLE_ISE_MCP=true
+ENABLE_SPLUNK_MCP=false      # Disabled - won't start
+```
+
+**Best Practices:**
+- Set `ENABLE_*_MCP=false` for servers you don't use
+- Only configure credentials for enabled servers
+- Use deployment profiles (below) to start specific groups
+- Reduces resource usage and attack surface
 
 ### Available Profiles
 
@@ -197,6 +222,23 @@ curl http://localhost:8002/mcp    # Test Catalyst Center server
 ./deploy.sh logs cisco                       # View logs
 ./deploy.sh stop all                         # Stop services
 ```
+
+### External Network Integration (for LibreChat)
+
+To integrate with LibreChat or other services on an external Docker network:
+
+```bash
+# 1. Create the external network
+docker network create mcp-server
+
+# 2. Copy and use the override configuration
+cp docker-compose.override.yml.example docker-compose.override.yml
+
+# 3. Deploy (automatically uses override file)
+./deploy.sh start all
+```
+
+The `docker-compose.override.yml` configures all MCP servers to join the external `mcp-server` network, allowing seamless communication with LibreChat and other services on the same network.
 
 ## 💻 Usage
 
@@ -418,8 +460,10 @@ docker network inspect <network_name>
 ```
 
 **Configuration issues:**
+- Check the centralized `.env` file for correct credentials
+- Verify API keys and passwords are properly set (not example placeholders)
 - Check individual server READMEs for detailed troubleshooting
-- Verify API credentials and permissions
+- Verify API credentials have appropriate permissions
 - Check network connectivity to target systems
 
 ## 📊 Monitoring and Maintenance

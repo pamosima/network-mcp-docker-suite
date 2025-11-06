@@ -64,6 +64,7 @@ load_dotenv_file()
 # Get configuration from environment
 netbox_url = os.getenv("NETBOX_URL")
 netbox_token = os.getenv("NETBOX_TOKEN")
+netbox_verify_ssl = os.getenv("NETBOX_VERIFY_SSL", "true").lower() in ("true", "1", "yes")
 mcp_port = int(os.getenv("MCP_PORT", "8001"))
 mcp_host = os.getenv("MCP_HOST", "localhost")
 
@@ -82,6 +83,7 @@ if not netbox_token:
 
 print(f"✅ NetBox URL: {netbox_url}")
 print(f"✅ NetBox token configured")
+print(f"🔒 SSL verification: {'enabled' if netbox_verify_ssl else 'disabled'}")
 print(f"🌐 MCP Server will run on: http://{mcp_host}:{mcp_port}")
 
 class NetBoxClientBase(abc.ABC):
@@ -210,7 +212,7 @@ class NetBoxRestClient(NetBoxClientBase):
 client = NetBoxRestClient(
     url=netbox_url,
     token=netbox_token,
-    verify_ssl=True
+    verify_ssl=netbox_verify_ssl
 )
 
 print("[DEBUG] Creating comprehensive NetBox MCP server...")

@@ -17,6 +17,7 @@ Environment Variables:
 - CATC_URL: Required. Your Catalyst Center URL (e.g., https://catalyst-center.example.com)
 - CATC_USERNAME: Required. Your Catalyst Center username
 - CATC_PASSWORD: Required. Your Catalyst Center password
+- CATC_VERIFY_SSL: Optional. SSL certificate verification. Defaults to false (use true for production with valid certs)
 - MCP_PORT: Optional. Port for MCP server. Defaults to 8002
 - MCP_HOST: Optional. Host for MCP server. Defaults to localhost
 
@@ -65,6 +66,7 @@ load_dotenv_file()
 CATC_URL = os.getenv("CATC_URL")
 CATC_USERNAME = os.getenv("CATC_USERNAME")
 CATC_PASSWORD = os.getenv("CATC_PASSWORD")
+CATC_VERIFY_SSL = os.getenv("CATC_VERIFY_SSL", "false").lower() in ("true", "1", "yes")
 mcp_host = os.getenv("MCP_HOST", "localhost")
 mcp_port = int(os.getenv("MCP_PORT", "8002"))
 
@@ -78,21 +80,24 @@ if not CATC_PASSWORD:
 
 print(f"🌐 Catalyst Center URL: {CATC_URL}")
 print(f"👤 Username: {CATC_USERNAME}")
+print(f"🔒 SSL verification: {'enabled' if CATC_VERIFY_SSL else 'disabled'}")
 print(f"🚀 Starting MCP server on {mcp_host}:{mcp_port}")
 
 class CatalystCenterAPI:
     """Cisco Catalyst Center API client"""
     
-    def __init__(self, base_url: str, username: str, password: str):
+    def __init__(self, base_url: str, username: str, password: str, verify_ssl: bool = False):
         self.base_url = base_url.rstrip('/')
         self.username = username
         self.password = password
         self.token = None
+        self.verify_ssl = verify_ssl
         self.session = requests.Session()
         
-        # Disable SSL warnings for lab environments
-        import urllib3
-        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        # Disable SSL warnings only if SSL verification is disabled
+        if not self.verify_ssl:
+            import urllib3
+            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
         
     def authenticate(self) -> bool:
         """Authenticate with Catalyst Center and get token"""
@@ -107,7 +112,7 @@ class CatalystCenterAPI:
         }
         
         try:
-            response = self.session.post(auth_url, headers=headers, verify=False)
+            response = self.session.post(auth_url, headers=headers, verify=self.verify_ssl)
             if response.status_code == 200:
                 self.token = response.json().get("Token")
                 return True
@@ -135,12 +140,12 @@ class CatalystCenterAPI:
         headers = self._get_headers()
         
         try:
-            response = self.session.get(url, headers=headers, params=params, verify=False)
+            response = self.session.get(url, headers=headers, params=params, verify=self.verify_ssl)
             if response.status_code == 401:
                 # Token expired, re-authenticate
                 if self.authenticate():
                     headers = self._get_headers()
-                    response = self.session.get(url, headers=headers, params=params, verify=False)
+                    response = self.session.get(url, headers=headers, params=params, verify=self.verify_ssl)
             
             response.raise_for_status()
             return response.json()
@@ -154,12 +159,12 @@ class CatalystCenterAPI:
         headers = self._get_headers()
         
         try:
-            response = self.session.post(url, headers=headers, json=data, verify=False)
+            response = self.session.post(url, headers=headers, json=data, verify=self.verify_ssl)
             if response.status_code == 401:
                 # Token expired, re-authenticate
                 if self.authenticate():
                     headers = self._get_headers()
-                    response = self.session.post(url, headers=headers, json=data, verify=False)
+                    response = self.session.post(url, headers=headers, json=data, verify=self.verify_ssl)
             
             response.raise_for_status()
             return response.json()
@@ -168,7 +173,7 @@ class CatalystCenterAPI:
             raise
 
 # Initialize API client
-catc_api = CatalystCenterAPI(CATC_URL, CATC_USERNAME, CATC_PASSWORD)
+catc_api = CatalystCenterAPI(CATC_URL, CATC_USERNAME, CATC_PASSWORD, verify_ssl=CATC_VERIFY_SSL)
 
 # Initialize FastMCP
 mcp = FastMCP("Catalyst Center MCP Server")
@@ -368,12 +373,12 @@ def get_assurance_issues(
         params['isGlobal'] = str(is_global).lower()
     
     try:
-        response = catc_api.session.get(url, headers=headers, params=params, verify=False)
+        response = catc_api.session.get(url, headers=headers, params=params, verify=catc_api.verify_ssl)
         if response.status_code == 401:
             # Token expired, re-authenticate
             if catc_api.authenticate():
                 headers = catc_api._get_headers()
-                response = catc_api.session.get(url, headers=headers, params=params, verify=False)
+                response = catc_api.session.get(url, headers=headers, params=params, verify=catc_api.verify_ssl)
         
         response.raise_for_status()
         return response.json()
@@ -420,12 +425,12 @@ def resolve_issues(issue_ids: List[str]) -> Dict[str, Any]:
     }
     
     try:
-        response = catc_api.session.post(url, headers=headers, json=payload, verify=False)
+        response = catc_api.session.post(url, headers=headers, json=payload, verify=catc_api.verify_ssl)
         if response.status_code == 401:
             # Token expired, re-authenticate
             if catc_api.authenticate():
                 headers = catc_api._get_headers()
-                response = catc_api.session.post(url, headers=headers, json=payload, verify=False)
+                response = catc_api.session.post(url, headers=headers, json=payload, verify=catc_api.verify_ssl)
         
         response.raise_for_status()
         result = response.json()
