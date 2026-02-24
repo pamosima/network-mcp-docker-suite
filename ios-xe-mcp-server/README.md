@@ -18,18 +18,38 @@ This MCP server provides **secure** SSH-based management capabilities for Cisco 
 ### Available Tools
 
 - **`show_command`**: Execute any show command on an IOS XE device (credentials from environment only)
-- **`config_command`**: Send configuration commands to an IOS XE device (credentials from environment only)
+- **`config_command`**: Send configuration commands to an IOS XE device (only available when `IOS_XE_READ_ONLY=false`)
+
+### Read-Only Mode
+
+For monitoring and troubleshooting workflows, you can enable **read-only mode** which only exposes the `show_command` tool:
+
+```bash
+# In .env
+IOS_XE_READ_ONLY=true    # Only show commands available (recommended for AI troubleshooting)
+IOS_XE_READ_ONLY=false   # Both show and config commands (default)
+```
+
+| Mode | `IOS_XE_READ_ONLY` | Available Tools |
+|------|---------------------|-----------------|
+| **Read-Only** | `true` | `show_command` only |
+| **Read-Write** | `false` (default) | `show_command` + `config_command` |
+
+**Use Cases:**
+- **netops-stack troubleshooting:** Set `IOS_XE_READ_ONLY=true` - AI can only run show commands
+- **Configuration automation:** Set `IOS_XE_READ_ONLY=false` - AI can push configs
 
 ### Security Features
 
 - 🔐 **Environment-only credentials** - No password parameters accepted  
+- 🔐 **Read-only mode** - Disable config commands for safe monitoring (`IOS_XE_READ_ONLY=true`)
 - 🔐 **Password masking** - Passwords masked in all logs (`your_default_password` → `y*********`)
 - 🔐 **Error sanitization** - Passwords removed from error messages (`***REDACTED***`)
 - 🔐 **Startup validation** - Server fails securely if credentials missing
 - ✅ **SSH timeout controls** - Configurable connection timeouts
 - ✅ **Enhanced error handling** - Safe error reporting without credential exposure
 - ✅ **Non-root container execution** - Minimal privilege operation
-- ✅ **Automatic configuration saving** - Changes persisted automatically
+- ✅ **Automatic configuration saving** - Changes persisted automatically (when not read-only)
 
 ## Usage Examples
 
@@ -110,10 +130,11 @@ nano .env
 | **`IOS_XE_USERNAME`** | **SSH username** | **`admin`** | **REQUIRED - Server fails without this** |
 | **`IOS_XE_PASSWORD`** | **SSH password** | **`your_default_password`** | **REQUIRED - Server fails without this** |
 
-#### Optional Advanced Settings
+#### Optional Settings
 
 | Variable | Description | Example | Notes |
 |----------|-------------|---------|-------|
+| `IOS_XE_READ_ONLY` | Read-only mode | `true` / `false` | `true` = show commands only (default: `false`) |
 | `SSH_TIMEOUT` | SSH connection timeout | `60` | Seconds |
 | `DEFAULT_DEVICE_TYPE` | Netmiko device type | `cisco_ios` | Usually `cisco_ios` for IOS XE |
 
@@ -126,6 +147,9 @@ nano .env
 # REQUIRED: Device credentials (server fails without these)
 IOS_XE_USERNAME=admin
 IOS_XE_PASSWORD=your_default_password
+
+# Read-Only Mode (recommended for monitoring/troubleshooting)
+IOS_XE_READ_ONLY=false    # Set to 'true' for show commands only
 
 # Optional: Server configuration  
 MCP_HOST=0.0.0.0
@@ -215,10 +239,19 @@ uv run python ios_xe_mcp_server.py
 All operations are logged securely without exposing credentials:
 
 ```log
+# Read-Write Mode (default)
 INFO: Loaded credentials for user: admin
 INFO: Secure mode: Credentials loaded from environment only
+INFO: ⚠️  READ-WRITE MODE: Configuration commands are available
 INFO: Starting SECURE IOS XE MCP server on 0.0.0.0:8003
-INFO: Security: Environment-only credentials, no password parameters accepted
+INFO: Mode: READ-WRITE (config enabled)
+
+# Read-Only Mode (IOS_XE_READ_ONLY=true)
+INFO: Loaded credentials for user: admin
+INFO: Secure mode: Credentials loaded from environment only
+INFO: 🔒 READ-ONLY MODE ENABLED: Only show commands are available
+INFO: Starting SECURE IOS XE MCP server on 0.0.0.0:8003
+INFO: Mode: READ-ONLY (show commands only)
 ```
 
 ## Troubleshooting
@@ -329,6 +362,8 @@ result = show_command("show version", "switch.company.com")
 Send configuration commands to an IOS XE device.
 
 **🔐 SECURITY:** Credentials are loaded from environment variables only. No password parameters accepted.
+
+**⚠️ AVAILABILITY:** Only available when `IOS_XE_READ_ONLY=false` (default). Not registered in read-only mode.
 
 **Parameters:**
 - `commands` (list): List of configuration commands to send

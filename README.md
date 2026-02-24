@@ -5,7 +5,7 @@
 > **📚 Example Code for Learning & Development**  
 > This is a demonstration project showcasing MCP server implementations for network management. Intended for educational purposes, testing, and development environments.
 
-Docker-based MCP server suite for **AIOps** - enabling AI-driven network operations through Cisco Meraki, Catalyst Center, IOS XE, ISE, ThousandEyes, Splunk & NetBox integration. AI-ready with LibreChat, Cursor, and other MCP clients for intelligent network management, automated troubleshooting, and operational insights.
+Docker-based MCP server suite for **AIOps** - enabling AI-driven network operations through Cisco Meraki, Catalyst Center, IOS XE, ISE, ThousandEyes, Splunk, NetBox & GitLab integration. AI-ready with LibreChat, Cursor, and other MCP clients for intelligent network management, automated troubleshooting, CI/CD orchestration, and operational insights.
 
 ## 🎬 Live Demo
 
@@ -17,7 +17,7 @@ AI-Powered Network Troubleshooting with LibreChat using Multiple MCP Servers
 
 ## 📋 Description
 
-This **AIOps-focused** Docker suite contains seven MCP servers enabling AI-driven network operations:
+This **AIOps-focused** Docker suite contains ten MCP servers enabling AI-driven network operations:
 
 - **Meraki MCP Server** (8000): Cloud network management through Meraki Dashboard API - [📖 Details](meraki-mcp-server/README.md)
 - **NetBox MCP Server** (8001): DCIM/IPAM infrastructure documentation and management - [📖 Details](netbox-mcp-server/README.md)
@@ -26,6 +26,9 @@ This **AIOps-focused** Docker suite contains seven MCP servers enabling AI-drive
 - **ThousandEyes MCP Server** (8004): Network performance monitoring and path visualization - [📖 Details](thousandeyes-mcp-server/README.md)
 - **ISE MCP Server** (8005): Identity and access control operations - [📖 Details](ise-mcp-server/README.md)
 - **Splunk MCP Server** (8006): Log analysis and operational intelligence - [📖 Details](splunk-mcp-server/README.md)
+- **Prometheus MCP Server** (8007): Metrics queries for network monitoring ([netops-stack](https://github.com/pamosima/netops-stack)) - [📖 Details](prometheus-mcp-server/README.md)
+- **ClickHouse MCP Server** (8008): Syslog and log queries for troubleshooting ([netops-stack](https://github.com/pamosima/netops-stack)) - [📖 Details](clickhouse-mcp-server/README.md)
+- **GitLab MCP Server** (8009): CI/CD pipeline triggering and repository management for network automation - [📖 Details](gitlab-mcp-server/README.md)
 
 All servers are containerized with flexible deployment profiles, enabling **AIOps workflows** through natural language queries, automated troubleshooting, and intelligent network analytics via AI assistants.
 
@@ -60,10 +63,12 @@ Network administrators and DevOps teams face significant challenges in managing 
 | Scenario | Description | Servers Used | Benefits |
 |----------|-------------|--------------|----------|
 | **Network Troubleshooting** | NOC engineer investigating connectivity issues (as shown in demo) | Catalyst Center + IOS-XE + ThousandEyes | Cross-platform correlation with performance monitoring |
+| **AI-Driven Troubleshooting** | AI assistant diagnosing interface drops or syslog errors | NetBox + Prometheus + ClickHouse | Automated correlation of topology, metrics, and logs |
 | **Performance Analysis** | Network analyst monitoring application performance | ThousandEyes + Catalyst Center | End-to-end performance visibility |
 | **Infrastructure Documentation** | SysAdmin updating network documentation | NetBox + Catalyst Center | Automated documentation synchronization |
 | **Compliance Reporting** | IT Manager generating audit reports | All servers | Consolidated reporting across infrastructure |
 | **Device Configuration** | Network engineer deploying configurations | Catalyst Center + IOS-XE | Standardized configuration management |
+| **CI/CD Dry-Run** | AI assistant updating config and triggering Ansible dry-run | GitLab + NetBox + IOS-XE | Safe config preview before deployment |
 
 ### 📚 Detailed Documentation
 
@@ -77,7 +82,32 @@ For comprehensive use case scenarios and implementation details, see:
 - **📊 [ThousandEyes Server Guide](thousandeyes-mcp-server/README.md)** - Network performance monitoring and path visualization
 - **🔐 [ISE Server Guide](ise-mcp-server/README.md)** - Identity and access control operations
 - **📈 [Splunk Server Guide](splunk-mcp-server/README.md)** - Log analysis and operational intelligence monitoring
+- **🦊 [GitLab Server Guide](gitlab-mcp-server/README.md)** - CI/CD pipeline triggering and repository management
 - **🤝 [Contributing Guidelines](CONTRIBUTING.md)** - How to extend use cases and add new functionality
+
+### 🔗 netops-stack Integration
+
+This MCP suite integrates with [**netops-stack**](https://github.com/pamosima/netops-stack) - an observability and orchestration platform for network automation featuring:
+
+- **gNMIc** - gNMI streaming telemetry collection
+- **Prometheus** - Metrics storage and querying
+- **ClickHouse** - Syslog and log storage via Vector
+- **Grafana** - Visualization dashboards
+- **GitLab CI/CD** - Ansible pipeline orchestration
+
+**Use the `netops-stack` profile** to start MCP servers optimized for netops-stack integration:
+
+```bash
+./deploy.sh start netops-stack   # Starts MCP Servers for: ClickHouse, GitLab, IOS-XE, NetBox, Prometheus
+```
+
+| MCP Server | netops-stack Component | Purpose |
+|------------|------------------------|---------|
+| Prometheus MCP | Prometheus (9090) | Query interface/device metrics |
+| ClickHouse MCP | ClickHouse (8123) | Query syslog messages |
+| GitLab MCP | GitLab CI/CD | Trigger Ansible dry-runs |
+| NetBox MCP | External SoT | Device inventory and topology |
+| IOS-XE MCP | Network devices | Direct show command access |
 
 ## 🏗️ Architecture
 
@@ -104,6 +134,12 @@ The suite provides direct access to seven containerized MCP servers, perfect for
 │                 │────┼─▶│ ISE MCP           :8005     │ │
 │                 │    │  ├─────────────────────────────┤ │
 │                 │────┼─▶│ Splunk MCP        :8006     │ │
+│                 │    │  ├─────────────────────────────┤ │
+│                 │────┼─▶│ Prometheus MCP    :8007     │ │
+│                 │    │  ├─────────────────────────────┤ │
+│                 │────┼─▶│ ClickHouse MCP    :8008     │ │
+│                 │    │  ├─────────────────────────────┤ │
+│                 │────┼─▶│ GitLab MCP        :8009     │ │
 │                 │    │  └─────────────────────────────┘ │
 └─────────────────┘    └──────────────────────────────────┘
         
@@ -118,7 +154,7 @@ The suite provides direct access to seven containerized MCP servers, perfect for
 
 - **🐳 Containerized Services**: Each MCP server runs in an isolated Docker container
 - **🔌 Standard MCP Protocol**: Compatible with any MCP client (Cursor, Claude Desktop, LibreChat)
-- **📊 Port-Based Access**: Each server on dedicated port (8000-8006)
+- **📊 Port-Based Access**: Each server on dedicated port (8000-8009)
 - **🔄 Independent Scaling**: Start/stop servers individually as needed
 - **🛡️ Network Isolation**: Internal Docker network for inter-container communication
 - **📝 Comprehensive Logging**: JSON-formatted logs with rotation for all services
@@ -184,6 +220,9 @@ ENABLE_IOS_XE_MCP=false      # Disabled - won't start
 ENABLE_THOUSANDEYES_MCP=true
 ENABLE_ISE_MCP=true
 ENABLE_SPLUNK_MCP=false      # Disabled - won't start
+ENABLE_PROMETHEUS_MCP=true   # netops-stack metrics
+ENABLE_CLICKHOUSE_MCP=true   # netops-stack syslog
+ENABLE_GITLAB_MCP=true       # CI/CD orchestration
 ```
 
 **Best Practices:**
@@ -196,9 +235,12 @@ ENABLE_SPLUNK_MCP=false      # Disabled - won't start
 
 | Profile | Description | Servers Deployed | Use Case |
 |---------|-------------|------------------|----------|
-| `all` | Deploy all servers | All 7 servers (8000-8006) | Complete infrastructure visibility |
+| `all` | Deploy all servers | All 10 servers (8000-8009) | Complete infrastructure visibility |
 | `cisco` | Cisco-focused platforms | Meraki + Catalyst Center + ThousandEyes + ISE + IOS XE | Cisco-centric environments |
 | `monitoring` | Network monitoring | Meraki + Catalyst Center + ThousandEyes + Splunk | Operations teams |
+| `observability` | netops-stack metrics/logs | Prometheus + ClickHouse + NetBox | AI-driven troubleshooting |
+| `netops-stack` | Full netops-stack integration | ClickHouse + GitLab + IOS-XE + NetBox + Prometheus | Complete AI orchestration |
+| `orchestration` | CI/CD automation | GitLab + NetBox + IOS XE | Network automation workflows |
 | `security` | Security-focused | Catalyst Center + ISE | Security operations |
 | `management` | Traditional management | Meraki + Catalyst Center | Network management |
 | `docs` | Documentation-focused | NetBox + Catalyst Center | Infrastructure documentation |
@@ -287,6 +329,9 @@ The AI assistant automatically uses both MCP servers working together:
 | ThousandEyes | 8004 | `http://localhost:8004/mcp` | Performance monitoring |
 | ISE | 8005 | `http://localhost:8005/mcp` | Identity & access control |
 | Splunk | 8006 | `http://localhost:8006/mcp` | Log analysis |
+| Prometheus | 8007 | `http://localhost:8007/mcp` | Metrics queries (netops-stack) |
+| ClickHouse | 8008 | `http://localhost:8008/mcp` | Syslog queries (netops-stack) |
+| GitLab | 8009 | `http://localhost:8009/mcp` | CI/CD & repository management |
 
 ## 🌐 MCP Client Integration
 
@@ -331,6 +376,21 @@ Create or update `~/.cursor/mcp.json`:
       "transport": "http",
       "url": "http://localhost:8006/mcp",
       "timeout": 60000
+    },
+    "Prometheus-MCP-Server": {
+      "transport": "http",
+      "url": "http://localhost:8007/mcp",
+      "timeout": 60000
+    },
+    "ClickHouse-MCP-Server": {
+      "transport": "http",
+      "url": "http://localhost:8008/mcp",
+      "timeout": 60000
+    },
+    "GitLab-MCP-Server": {
+      "transport": "http",
+      "url": "http://localhost:8009/mcp",
+      "timeout": 60000
     }
   }
 }
@@ -369,6 +429,18 @@ mcpServers:
   Splunk-MCP-Server:
     type: streamable-http
     url: http://splunk-mcp-server:8006/mcp
+    timeout: 60000
+  Prometheus-MCP-Server:
+    type: streamable-http
+    url: http://prometheus-mcp-server:8007/mcp
+    timeout: 60000
+  ClickHouse-MCP-Server:
+    type: streamable-http
+    url: http://clickhouse-mcp-server:8008/mcp
+    timeout: 60000
+  GitLab-MCP-Server:
+    type: streamable-http
+    url: http://gitlab-mcp-server:8009/mcp
     timeout: 60000
 ```
 
@@ -410,6 +482,9 @@ curl http://localhost:8003/mcp    # IOS XE
 curl http://localhost:8004/mcp    # ThousandEyes
 curl http://localhost:8005/mcp    # ISE
 curl http://localhost:8006/mcp    # Splunk
+curl http://localhost:8007/mcp    # Prometheus
+curl http://localhost:8008/mcp    # ClickHouse
+curl http://localhost:8009/mcp    # GitLab
 ```
 
 ## 🔒 Security Considerations

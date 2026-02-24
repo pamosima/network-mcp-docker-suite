@@ -284,3 +284,126 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+  prometheus-mcp-server:
+    build:
+      context: ./prometheus-mcp-server
+      dockerfile: Dockerfile
+    container_name: prometheus-mcp-server
+    restart: unless-stopped
+    
+    # Load environment variables from .env file
+    env_file:
+      - ./.env
+    
+    # Environment variables (override any from .env file if needed)
+    environment:
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=8007
+      
+    # Port mapping: host:container
+    ports:
+      - "8007:8007"
+    
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+    
+    # Resource limits (optional, adjust as needed)
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  clickhouse-mcp-server:
+    build:
+      context: ./clickhouse-mcp-server
+      dockerfile: Dockerfile
+    container_name: clickhouse-mcp-server
+    restart: unless-stopped
+    
+    # Load environment variables from .env file
+    env_file:
+      - ./.env
+    
+    # Environment variables (override any from .env file if needed)
+    environment:
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=8008
+      
+    # Port mapping: host:container
+    ports:
+      - "8008:8008"
+    
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+    
+    # Resource limits (optional, adjust as needed)
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  gitlab-mcp-server:
+    build:
+      context: ./gitlab-mcp-server
+      dockerfile: Dockerfile
+    container_name: gitlab-mcp-server
+    restart: unless-stopped
+    
+    # Load environment variables from .env file
+    env_file:
+      - ./.env
+    
+    # Environment variables (override any from .env file if needed)
+    environment:
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=8009
+      
+    # Port mapping: host:container
+    ports:
+      - "8009:8009"
+    
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+    
+    # Resource limits (optional, adjust as needed)
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

@@ -276,15 +276,20 @@ def get_device_by_id(device_id: int) -> Dict[str, Any]:
         return {"success": False, "error": str(e)}
 
 @mcp.tool()
-def create_device(name: str, device_type_id: int, site_id: int, status: str = "active") -> Dict[str, Any]:
+def create_device(name: str, device_type_id: int, site_id: int, role_id: int, status: str = "active", location_id: Optional[int] = None, serial: Optional[str] = None) -> Dict[str, Any]:
     """Create a new device in NetBox."""
     try:
         device_data = {
             "name": name,
             "device_type": device_type_id,
             "site": site_id,
+            "role": role_id,
             "status": status
         }
+        if location_id:
+            device_data["location"] = location_id
+        if serial:
+            device_data["serial"] = serial
         return {"success": True, "data": client.create("dcim/devices", device_data)}
     except Exception as e:
         return {"success": False, "error": str(e)}
@@ -297,6 +302,15 @@ def get_device_types(limit: int = 50, manufacturer_id: Optional[int] = None) -> 
         if manufacturer_id:
             query_params["manufacturer_id"] = manufacturer_id
         return {"success": True, "data": client.get("dcim/device-types", params=query_params)}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@mcp.tool()
+def get_device_roles(limit: int = 50) -> Dict[str, Any]:
+    """Get device roles from NetBox DCIM."""
+    try:
+        query_params = {"limit": limit}
+        return {"success": True, "data": client.get("dcim/device-roles", params=query_params)}
     except Exception as e:
         return {"success": False, "error": str(e)}
 

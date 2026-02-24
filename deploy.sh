@@ -9,13 +9,16 @@
 # - ThousandEyes MCP Server: Network performance monitoring
 # - ISE MCP Server: Identity and access control
 # - Splunk MCP Server: Log analysis and SIEM
+# - Prometheus MCP Server: Metrics queries (gnp-stack/netops-stack)
+# - ClickHouse MCP Server: Syslog queries (gnp-stack/netops-stack)
+# - GitLab MCP Server: CI/CD pipeline orchestration
 #
 # Features:
 # - Enable/disable individual servers via .env file (ENABLE_*_MCP)
-# - Flexible deployment profiles (all, cisco, monitoring, security, etc.)
+# - Flexible deployment profiles (all, cisco, monitoring, security, netops-stack, etc.)
 # - Automatic filtering of disabled servers
 #
-# Updated: 2025-11-06 - Added .env integration for enable/disable control
+# Updated: 2026-02-24 - Added Prometheus, ClickHouse, GitLab servers and netops-stack profile
 
 set -e
 
@@ -68,6 +71,15 @@ is_enabled() {
             ;;
         "splunk-mcp-server")
             var_name="ENABLE_SPLUNK_MCP"
+            ;;
+        "prometheus-mcp-server")
+            var_name="ENABLE_PROMETHEUS_MCP"
+            ;;
+        "clickhouse-mcp-server")
+            var_name="ENABLE_CLICKHOUSE_MCP"
+            ;;
+        "gitlab-mcp-server")
+            var_name="ENABLE_GITLAB_MCP"
             ;;
     esac
     
@@ -127,27 +139,35 @@ show_usage() {
     echo "  cleanup   Stop and remove disabled servers"
     echo ""
     echo "Profiles:"
-    echo "  all       All servers (Meraki + NetBox + Catalyst Center + ThousandEyes + ISE + IOS XE)"
-    echo "  meraki    Meraki MCP server only"
-    echo "  netbox    NetBox MCP server only"
-    echo "  catc      Catalyst Center MCP server only"
+    echo "  all         All servers (all 10 MCP servers)"
+    echo "  meraki      Meraki MCP server only"
+    echo "  netbox      NetBox MCP server only"
+    echo "  catc        Catalyst Center MCP server only"
     echo "  thousandeyes ThousandEyes MCP server only"
-    echo "  ise       ISE MCP server only"
-    echo "  ios-xe    IOS XE MCP server only"
-    echo "  cisco     Cisco-focused (Meraki + Catalyst Center + ThousandEyes + ISE + IOS XE)"
-    echo "  network   Network management (Meraki + ThousandEyes + IOS XE)"
-    echo "  security  Security-focused (Catalyst Center + ISE)"
-    echo "  monitoring Network monitoring (Meraki + Catalyst Center + ThousandEyes)"
-    echo "  docs      Documentation-focused (NetBox + Catalyst Center)"
+    echo "  ise         ISE MCP server only"
+    echo "  ios-xe      IOS XE MCP server only"
+    echo "  splunk      Splunk MCP server only"
+    echo "  prometheus  Prometheus MCP server only"
+    echo "  clickhouse  ClickHouse MCP server only"
+    echo "  gitlab      GitLab MCP server only"
+    echo "  cisco       Cisco-focused (Meraki + Catalyst Center + ThousandEyes + ISE + IOS XE)"
+    echo "  network     Network management (Meraki + ThousandEyes + IOS XE)"
+    echo "  security    Security-focused (Catalyst Center + ISE)"
+    echo "  monitoring  Network monitoring (Meraki + Catalyst Center + ThousandEyes + Splunk)"
+    echo "  docs        Documentation-focused (NetBox + Catalyst Center)"
+    echo "  observability gnp-stack integration (Prometheus + ClickHouse + NetBox)"
+    echo "  orchestration CI/CD automation (GitLab + NetBox + IOS XE)"
+    echo "  netops-stack  netops-stack integration (ClickHouse + GitLab + IOS XE + NetBox + Prometheus)"
     echo ""
     echo "Examples:"
     echo "  $0 start all          # Start all enabled servers"
     echo "  $0 start meraki       # Start only Meraki server (if enabled)"
     echo "  $0 start cisco        # Start Cisco-focused servers (if enabled)"
+    echo "  $0 start netops-stack # Starts MCP Servers for: ClickHouse, GitLab, IOS-XE, NetBox, Prometheus"
     echo "  $0 cleanup            # Stop and remove disabled servers"
     echo "  $0 stop all           # Stop all servers"
     echo "  $0 status all         # Show status of enabled servers"
-    echo "  $0 logs meraki        # Show Meraki server logs"
+    echo "  $0 logs gitlab        # Show GitLab server logs"
     echo ""
     echo "Workflow after disabling servers in .env:"
     echo "  1. Edit .env and set ENABLE_*_MCP=false"
@@ -156,12 +176,13 @@ show_usage() {
     echo ""
 }
 
+
 # Function to build service arguments
 build_service_args() {
     local profile=$1
     case $profile in
         "all")
-            echo "meraki-mcp-servers netbox-mcp-server catc-mcp-server thousandeyes-mcp-server ise-mcp-server ios-xe-mcp-server splunk-mcp-server"
+            echo "meraki-mcp-servers netbox-mcp-server catc-mcp-server thousandeyes-mcp-server ise-mcp-server ios-xe-mcp-server splunk-mcp-server prometheus-mcp-server clickhouse-mcp-server gitlab-mcp-server"
             ;;
         "meraki")
             echo "meraki-mcp-servers"
@@ -184,6 +205,15 @@ build_service_args() {
         "splunk")
             echo "splunk-mcp-server"
             ;;
+        "prometheus"|"prom")
+            echo "prometheus-mcp-server"
+            ;;
+        "clickhouse"|"ch")
+            echo "clickhouse-mcp-server"
+            ;;
+        "gitlab"|"gl")
+            echo "gitlab-mcp-server"
+            ;;
         "cisco")
             echo "meraki-mcp-servers catc-mcp-server thousandeyes-mcp-server ise-mcp-server ios-xe-mcp-server"
             ;;
@@ -201,6 +231,15 @@ build_service_args() {
             ;;
         "monitoring")
             echo "meraki-mcp-servers catc-mcp-server thousandeyes-mcp-server splunk-mcp-server"
+            ;;
+        "observability"|"obs")
+            echo "prometheus-mcp-server clickhouse-mcp-server netbox-mcp-server"
+            ;;
+        "orchestration"|"orch")
+            echo "gitlab-mcp-server netbox-mcp-server ios-xe-mcp-server"
+            ;;
+        "netops-stack"|"netops")
+            echo "clickhouse-mcp-server gitlab-mcp-server ios-xe-mcp-server netbox-mcp-server prometheus-mcp-server"
             ;;
         *)
             echo -e "${RED}Error: Unknown profile '$profile'${NC}"
@@ -304,7 +343,7 @@ case $COMMAND in
         echo -e "${YELLOW}🧹 Cleaning up disabled servers...${NC}"
         
         # Get all possible servers
-        ALL_SERVERS="meraki-mcp-servers netbox-mcp-server catc-mcp-server thousandeyes-mcp-server ise-mcp-server ios-xe-mcp-server splunk-mcp-server"
+        ALL_SERVERS="meraki-mcp-servers netbox-mcp-server catc-mcp-server thousandeyes-mcp-server ise-mcp-server ios-xe-mcp-server splunk-mcp-server prometheus-mcp-server clickhouse-mcp-server gitlab-mcp-server"
         
         STOPPED_COUNT=0
         for service in $ALL_SERVERS; do
