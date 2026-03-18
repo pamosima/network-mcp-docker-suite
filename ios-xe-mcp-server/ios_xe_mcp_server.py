@@ -100,11 +100,10 @@ def create_safe_device_dict(host: str, username: str, password: str, secret: str
 
 def log_connection_attempt(host: str, command: str = None):
     """Safely log connection attempts without exposing passwords"""
-    masked_pwd = mask_password(DEFAULT_PASSWORD)
     if command:
-        logger.info(f"Connecting to {host} as '{DEFAULT_USERNAME}' (pwd: {masked_pwd}) to execute: {command}")
+        logger.info(f"Connecting to {host} as '{DEFAULT_USERNAME}' to execute: {command}")
     else:
-        logger.info(f"Connecting to {host} as '{DEFAULT_USERNAME}' (pwd: {masked_pwd}) for configuration")
+        logger.info(f"Connecting to {host} as '{DEFAULT_USERNAME}' for configuration")
 
 # Define MCP Server
 mcp = FastMCP("ios-xe-mcp-server")

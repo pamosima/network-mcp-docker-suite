@@ -28,11 +28,10 @@ Based on: https://github.com/automateyournetwork/ISE_MCP
 """
 
 import os
-import json
 import requests
 import urllib3
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 from fastmcp import FastMCP
 
 # Disable SSL warnings if verify is False

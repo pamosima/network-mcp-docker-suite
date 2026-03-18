@@ -79,7 +79,7 @@ if not api_key or api_key.startswith('your_actual_'):
     print("   Example: MERAKI_KEY=your_actual_api_key_here")
     exit(1)
 
-print(f"✅ Meraki API key loaded: {api_key[:8]}...{api_key[-4:]}")
+print(f"✅ Meraki API key loaded: [CONFIGURED]")
 print(f"🌐 MCP Server will run on: http://{mcp_host}:{mcp_port}")
 
 

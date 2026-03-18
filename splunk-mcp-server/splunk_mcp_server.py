@@ -24,7 +24,6 @@ Author: Patrick Mosimann
 import httpx
 import os
 import logging
-import json
 from pathlib import Path
 from fastmcp import FastMCP
 
@@ -91,7 +90,7 @@ if not splunk_api_key or splunk_api_key.startswith('your_actual_'):
 splunk_backend_url = f"https://{splunk_host}:{splunk_port}/services/mcp"
 
 logger.info(f"✅ Splunk backend: {splunk_backend_url}")
-logger.info(f"✅ API key loaded: {splunk_api_key[:8]}...{splunk_api_key[-4:]}")
+logger.info(f"✅ API key loaded: [CONFIGURED]")
 logger.info(f"✅ SSL verification: {splunk_verify_ssl}")
 logger.info(f"🌐 MCP Server will run on: http://{mcp_host}:{mcp_port}")
 

@@ -25,10 +25,9 @@ Author: Patrick Mosimann
 """
 
 import os
-import json
 import base64
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 import requests
 from fastmcp import FastMCP
 
