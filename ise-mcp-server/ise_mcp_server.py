@@ -329,7 +329,7 @@ def ise_get_endpoints(
     Get endpoints (devices) known to ISE
     
     Args:
-        filter_expression: Filter in format 'field.OPERATION.value' (e.g., 'mac.EQUALS.00:50:56:C0:00:01')
+        filter_expression: Filter in format 'field.OPERATION.value' (e.g., 'mac.EQ.00:50:56:C0:00:01')
         page: Page number for pagination (default: 1)
         size: Number of results per page (default: 20, max: 100)
     
@@ -491,7 +491,7 @@ def ise_search_endpoint_by_mac(mac_address: str) -> Dict[str, Any]:
     Returns:
         Dict containing endpoint information for the specified MAC address
     """
-    filter_expr = f"mac.EQUALS.{mac_address}"
+    filter_expr = f"mac.EQ.{mac_address}"
     return ise_api.get("endpoint", params={"filter": filter_expr})
 
 @mcp.tool()
@@ -505,7 +505,7 @@ def ise_search_user_sessions(username: str) -> Dict[str, Any]:
     Returns:
         Dict containing active session information for the specified user
     """
-    filter_expr = f"userName.EQUALS.{username}"
+    filter_expr = f"userName.EQ.{username}"
     return ise_api.get("session", params={"filter": filter_expr})
 
 @mcp.tool()
@@ -520,7 +520,7 @@ def ise_get_device_compliance_status(mac_address: str) -> Dict[str, Any]:
         Dict containing compliance and profiling information for the device
     """
     # Get endpoint information
-    endpoint_filter = f"mac.EQUALS.{mac_address}"
+    endpoint_filter = f"mac.EQ.{mac_address}"
     endpoint_data = ise_api.get("endpoint", params={"filter": endpoint_filter})
     
     return {

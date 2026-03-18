@@ -76,7 +76,7 @@ admin_users = ise_get_internal_users(filter_expression="name.CONTAINS.admin")
 groups = ise_get_identity_groups()
 
 # Get guest users
-guests = ise_get_guest_users(filter_expression="guestType.EQUALS.Contractor")
+guests = ise_get_guest_users(filter_expression="guestType.EQ.Contractor")
 ```
 
 ### Device and Endpoint Monitoring
@@ -119,7 +119,7 @@ user_sessions = ise_search_user_sessions(username="john.doe")
 
 # Monitor sessions by device
 device_sessions = ise_get_active_sessions(
-    filter_expression="endPointMACAddress.EQUALS.00:50:56:C0:00:01"
+    filter_expression="endPointMACAddress.EQ.00:50:56:C0:00:01"
 )
 
 # Get profiler classifications
@@ -376,14 +376,14 @@ Get active network access sessions.
 ### ISE Filter Operations
 
 All filterable tools support these ISE ERS API operations:
-- `EQUALS` - Exact match
+- `EQ` - Exact match (ISE 3.1+)
 - `CONTAINS` - Substring match  
 - `STARTSWITH` - Prefix match
 - `ENDSWITH` - Suffix match
 
 **Example filters:**
 - `name.CONTAINS.printer` - Find devices with "printer" in name
-- `mac.EQUALS.00:50:56:C0:00:01` - Find exact MAC address
+- `mac.EQ.00:50:56:C0:00:01` - Find exact MAC address
 - `userName.STARTSWITH.guest_` - Find guest users
 
 ### Security Features
