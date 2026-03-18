@@ -42,14 +42,32 @@ IOS_XE_READ_ONLY=false   # Both show and config commands (default)
 ### Security Features
 
 - 🔐 **Environment-only credentials** - No password parameters accepted  
+- 🔐 **Enable mode support** - Automatic privilege escalation with `IOS_XE_ENABLE_SECRET`
 - 🔐 **Read-only mode** - Disable config commands for safe monitoring (`IOS_XE_READ_ONLY=true`)
-- 🔐 **Password masking** - Passwords masked in all logs (`your_default_password` → `y*********`)
-- 🔐 **Error sanitization** - Passwords removed from error messages (`***REDACTED***`)
+- 🔐 **Password masking** - Passwords and secrets masked in all logs (`your_default_password` → `y*********`)
+- 🔐 **Error sanitization** - Passwords and secrets removed from error messages (`***REDACTED***`)
 - 🔐 **Startup validation** - Server fails securely if credentials missing
 - ✅ **SSH timeout controls** - Configurable connection timeouts
 - ✅ **Enhanced error handling** - Safe error reporting without credential exposure
 - ✅ **Non-root container execution** - Minimal privilege operation
 - ✅ **Automatic configuration saving** - Changes persisted automatically (when not read-only)
+
+### Enable Mode Configuration
+
+For devices that require privilege escalation (not configured for priv 15 login):
+
+```bash
+# Device requires enable password to enter privileged exec mode
+IOS_XE_ENABLE_SECRET=your_enable_password
+```
+
+**When to use:**
+- Device login drops you to user exec mode (`Router>`)
+- You need to type `enable` and enter a password to get `Router#`
+
+**When NOT needed:**
+- Device login goes directly to privileged exec mode (`Router#`)
+- User account is configured with `privilege 15`
 
 ## Usage Examples
 
@@ -134,6 +152,7 @@ nano .env
 
 | Variable | Description | Example | Notes |
 |----------|-------------|---------|-------|
+| `IOS_XE_ENABLE_SECRET` | Enable secret for priv 15 | `enable_password` | Leave empty if login is already priv 15 |
 | `IOS_XE_READ_ONLY` | Read-only mode | `true` / `false` | `true` = show commands only (default: `false`) |
 | `SSH_TIMEOUT` | SSH connection timeout | `60` | Seconds |
 | `DEFAULT_DEVICE_TYPE` | Netmiko device type | `cisco_ios` | Usually `cisco_ios` for IOS XE |
@@ -147,6 +166,9 @@ nano .env
 # REQUIRED: Device credentials (server fails without these)
 IOS_XE_USERNAME=admin
 IOS_XE_PASSWORD=your_default_password
+
+# Enable Secret (optional - for devices requiring privilege escalation)
+IOS_XE_ENABLE_SECRET=      # Leave empty if login is already priv 15
 
 # Read-Only Mode (recommended for monitoring/troubleshooting)
 IOS_XE_READ_ONLY=false    # Set to 'true' for show commands only

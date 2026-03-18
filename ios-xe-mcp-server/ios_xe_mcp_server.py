@@ -9,6 +9,7 @@ Features:
 - Direct SSH-based device management
 - Show command execution for monitoring and troubleshooting
 - Configuration change deployment with automatic save (when not in read-only mode)
+- Enable mode support for devices requiring privilege escalation
 - Read-only mode for safe monitoring operations (show commands only)
 - Secure credential management (environment variables only)
 - Password sanitization in logs and error messages
@@ -18,6 +19,7 @@ Features:
 Environment Variables:
 - IOS_XE_USERNAME: Required. Default IOS XE username for device access
 - IOS_XE_PASSWORD: Required. Default IOS XE password for device access
+- IOS_XE_ENABLE_SECRET: Optional. Enable secret for privilege escalation (if different from password)
 - IOS_XE_READ_ONLY: Optional. Set to 'true' for read-only mode (show commands only). Defaults to false.
 - MCP_HOST: Optional. Host for MCP server. Defaults to localhost  
 - MCP_PORT: Optional. Port for MCP server. Defaults to 8003
@@ -43,6 +45,7 @@ load_dotenv()
 
 DEFAULT_USERNAME = os.getenv("IOS_XE_USERNAME")
 DEFAULT_PASSWORD = os.getenv("IOS_XE_PASSWORD")
+ENABLE_SECRET = os.getenv("IOS_XE_ENABLE_SECRET", "")  # Optional enable secret
 
 # Validate environment credentials (required for secure operation)
 if not DEFAULT_USERNAME or not DEFAULT_PASSWORD:
@@ -55,6 +58,8 @@ READ_ONLY_MODE = os.getenv("IOS_XE_READ_ONLY", "false").lower() in ("true", "1",
 
 logger.info(f"Loaded credentials for user: {DEFAULT_USERNAME}")
 logger.info("Secure mode: Credentials loaded from environment only")
+if ENABLE_SECRET:
+    logger.info("🔑 Enable secret configured for privilege escalation")
 if READ_ONLY_MODE:
     logger.info("🔒 READ-ONLY MODE ENABLED: Only show commands are available")
 else:
@@ -62,10 +67,13 @@ else:
 
 # Password security utilities
 def sanitize_error_message(error_msg: str) -> str:
-    """Remove passwords from error messages for security"""
-    if DEFAULT_PASSWORD and DEFAULT_PASSWORD in error_msg:
-        return error_msg.replace(DEFAULT_PASSWORD, "***REDACTED***")
-    return error_msg
+    """Remove passwords and secrets from error messages for security"""
+    result = error_msg
+    if DEFAULT_PASSWORD and DEFAULT_PASSWORD in result:
+        result = result.replace(DEFAULT_PASSWORD, "***REDACTED***")
+    if ENABLE_SECRET and ENABLE_SECRET in result:
+        result = result.replace(ENABLE_SECRET, "***REDACTED***")
+    return result
 
 def mask_password(password: str) -> str:
     """Mask password for logging (show first char + asterisks)"""
@@ -75,9 +83,9 @@ def mask_password(password: str) -> str:
         return "*" * len(password)
     return password[0] + "*" * (len(password) - 1)
 
-def create_safe_device_dict(host: str, username: str, password: str) -> dict:
-    """Create device connection dict with password handling"""
-    return {
+def create_safe_device_dict(host: str, username: str, password: str, secret: str = "") -> dict:
+    """Create device connection dict with password and enable secret handling"""
+    device = {
         "device_type": "cisco_ios",
         "host": host,
         "username": username,
@@ -85,6 +93,10 @@ def create_safe_device_dict(host: str, username: str, password: str) -> dict:
         "timeout": 60,
         "session_timeout": 60,
     }
+    # Add enable secret if configured (for devices requiring privilege escalation)
+    if secret:
+        device["secret"] = secret
+    return device
 
 def log_connection_attempt(host: str, command: str = None):
     """Safely log connection attempts without exposing passwords"""
@@ -116,14 +128,17 @@ def show_command(command: str, host: str) -> str:
     if not host:
         return "Error: host parameter is required"
     
-    # Create device connection dictionary
-    device = create_safe_device_dict(host, DEFAULT_USERNAME, DEFAULT_PASSWORD)
+    # Create device connection dictionary (with enable secret if configured)
+    device = create_safe_device_dict(host, DEFAULT_USERNAME, DEFAULT_PASSWORD, ENABLE_SECRET)
 
     try:
         # Log connection attempt with masked password
         log_connection_attempt(host, command)
         
         with ConnectHandler(**device) as conn:
+            # Enter enable mode if secret is configured and not already in privileged mode
+            if ENABLE_SECRET:
+                conn.enable()
             output = conn.send_command(command)
         logger.info(f"Successfully executed command on {host}")
         return output
@@ -135,7 +150,7 @@ def show_command(command: str, host: str) -> str:
         
         # Return helpful error context without exposing credentials
         if "Authentication" in str(e) or "auth" in str(e).lower():
-            return f"Authentication to device failed.\n\nCommon causes:\n1. Invalid credentials in environment\n2. Device SSH configuration\n3. Network connectivity\n\nDevice: cisco_ios {host}:22\n\n{safe_error}"
+            return f"Authentication to device failed.\n\nCommon causes:\n1. Invalid credentials in environment\n2. Device SSH configuration\n3. Network connectivity\n4. Invalid enable secret\n\nDevice: cisco_ios {host}:22\n\n{safe_error}"
         else:
             return safe_error
 
@@ -148,6 +163,9 @@ if not READ_ONLY_MODE:
         
         SECURITY: Credentials are loaded from environment variables only.
         No password parameters accepted to prevent exposure in logs/traces.
+        
+        Note: If IOS_XE_ENABLE_SECRET is configured, the server will automatically
+        enter enable mode before sending configuration commands.
         
         Args:
             commands: List of configuration commands (e.g., ['interface gi0/1', 'no shutdown'])
@@ -162,14 +180,19 @@ if not READ_ONLY_MODE:
         if not commands or not isinstance(commands, list):
             return "Error: commands must be a non-empty list"
         
-        # Create device connection dictionary  
-        device = create_safe_device_dict(host, DEFAULT_USERNAME, DEFAULT_PASSWORD)
+        # Create device connection dictionary (with enable secret if configured)
+        device = create_safe_device_dict(host, DEFAULT_USERNAME, DEFAULT_PASSWORD, ENABLE_SECRET)
 
         try:
             # Log connection attempt with masked password
             log_connection_attempt(host)
             
             with ConnectHandler(**device) as conn:
+                # Enter enable mode if secret is configured (required for config mode)
+                if ENABLE_SECRET:
+                    conn.enable()
+                    logger.info(f"Entered enable mode on {host}")
+                
                 # Enter configuration mode and send commands
                 output = conn.send_config_set(commands)
                 # Save configuration
@@ -186,7 +209,7 @@ if not READ_ONLY_MODE:
             
             # Return helpful error context without exposing credentials
             if "Authentication" in str(e) or "auth" in str(e).lower():
-                return f"Authentication to device failed.\n\nCommon causes:\n1. Invalid credentials in environment\n2. Device SSH configuration\n3. Network connectivity\n\nDevice: cisco_ios {host}:22\n\n{safe_error}"
+                return f"Authentication to device failed.\n\nCommon causes:\n1. Invalid credentials in environment\n2. Device SSH configuration\n3. Network connectivity\n4. Invalid enable secret\n\nDevice: cisco_ios {host}:22\n\n{safe_error}"
             else:
                 return safe_error
 
@@ -200,7 +223,9 @@ if __name__ == "__main__":
     mcp_port = int(os.getenv("MCP_PORT", "8003"))
     
     mode_str = "READ-ONLY (show commands only)" if READ_ONLY_MODE else "READ-WRITE (config enabled)"
+    enable_str = "Enable secret: configured" if ENABLE_SECRET else "Enable secret: not set (using priv 15 login)"
     logger.info(f"Starting SECURE IOS XE MCP server on {mcp_host}:{mcp_port}")
     logger.info(f"Mode: {mode_str}")
+    logger.info(f"{enable_str}")
     logger.info("Security: Environment-only credentials, no password parameters accepted")
     mcp.run(transport="streamable-http", host=mcp_host, port=mcp_port)
