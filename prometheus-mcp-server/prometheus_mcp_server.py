@@ -10,7 +10,7 @@ Environment Variables:
 
 import os
 import re
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, Optional
 
 import httpx
 from fastmcp import FastMCP

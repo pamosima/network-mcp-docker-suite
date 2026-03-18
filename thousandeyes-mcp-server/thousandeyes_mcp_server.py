@@ -25,7 +25,7 @@ Based on: https://github.com/CiscoDevNet/thousandeyes-mcp-community
 
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 import requests
 from fastmcp import FastMCP
 

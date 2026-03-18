@@ -31,7 +31,7 @@ import os
 import requests
 import urllib3
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 from fastmcp import FastMCP
 
 # Disable SSL warnings if verify is False
