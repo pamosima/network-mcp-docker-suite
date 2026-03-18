@@ -1,5 +1,5 @@
 # Cisco ISE MCP Server - Dockerfile
-FROM python:3.12-slim@sha256:7026274c107626d7e940e0e5d6730481a4600ae95d5ca7eb532dd4180313fea9
+FROM python:3.14-slim@sha256:584e89d31009a79ae4d9e3ab2fba078524a6c0921cb2711d05e8bb5f628fc9b9
 
 # Set working directory
 WORKDIR /app
