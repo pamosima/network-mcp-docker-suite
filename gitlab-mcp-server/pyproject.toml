@@ -5,7 +5,7 @@ description = "GitLab MCP server for CI/CD operations and repository management"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "fastmcp>=2.10.6",
+    "fastmcp>=3.1.0",
     "httpx>=0.27.0",
     "uvicorn>=0.35.0",
 ]

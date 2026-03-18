@@ -14,10 +14,10 @@ RUN apt-get update && apt-get install -y \
 RUN pip install uv
 
 # Copy dependency files
-COPY pyproject.toml uv.lock* ./
+COPY pyproject.toml ./
 
 # Install Python dependencies using uv
-RUN uv sync --frozen
+RUN uv sync
 
 # Copy application code
 COPY . .
