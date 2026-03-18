@@ -195,8 +195,6 @@ base_client = httpx.AsyncClient(
 client = MerakiResponseFixingClient(base_client)
 
 # ---- Validation Patching ----
-# Store original validate method for potential restoration
-_original_validate = jsonschema.validate
 
 # ---- Role-Based Route Configurations ----
 
@@ -261,7 +259,7 @@ try:
     import fastmcp.server.openapi
     if hasattr(fastmcp.server.openapi, 'validate'):
         fastmcp.server.openapi.validate = patched_validate
-except:
+except Exception:
     pass
 
 # Also patch the OpenAPITool class validation if it exists
@@ -284,7 +282,7 @@ try:
     if hasattr(Draft7Validator, 'iter_errors'):
         Draft7Validator.iter_errors = lambda self, *args, **kwargs: []
         
-except:
+except Exception:
     pass
 
 # More aggressive FastMCP patching
@@ -314,7 +312,7 @@ for module_name, module in sys.modules.items():
                     attr = getattr(module, attr_name)
                     if callable(attr):
                         setattr(module, attr_name, patched_validate)
-        except:
+        except Exception:
             pass
 
 # ---- MCP Server Configuration ----
@@ -382,7 +380,7 @@ def emergency_patch():
                             attr = getattr(module, attr_name)
                             if callable(attr):
                                 setattr(module, attr_name, lambda *a, **k: None)
-                        except:
+                        except Exception:
                             pass
 
 emergency_patch()

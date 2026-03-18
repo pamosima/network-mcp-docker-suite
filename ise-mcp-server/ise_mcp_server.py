@@ -630,7 +630,7 @@ if __name__ == "__main__":
     
     # Test ISE API connectivity
     try:
-        network_devices = ise_api.get("networkdevice", params={"size": 1})
+        ise_api.get("networkdevice", params={"size": 1})
         print("✅ Successfully connected to ISE ERS API")
         print(f"📊 ISE Server Version: {ISE_VERSION}")
     except Exception as e:
