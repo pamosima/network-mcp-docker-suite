@@ -1,5 +1,5 @@
 # Catalyst Center MCP Server - Dockerfile
-FROM python:3.11-slim@sha256:6d98ca198cea726f2c86da2699594339a7b7ff08e49728797b4ed6e3b5c3b62a
+FROM python:3.14-slim@sha256:584e89d31009a79ae4d9e3ab2fba078524a6c0921cb2711d05e8bb5f628fc9b9
 
 # Set working directory
 WORKDIR /app
