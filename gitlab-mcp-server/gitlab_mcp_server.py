@@ -510,6 +510,48 @@ def list_gitlab_pipelines(
 
 
 @mcp.tool()
+def play_gitlab_job(
+    project_id: Optional[str] = None,
+    job_id: int = 0
+) -> Dict[str, Any]:
+    """
+    Play (trigger) a manual job in a GitLab pipeline.
+    
+    Use this to run manual jobs after a dry-run completes, such as:
+    - apply_config: Apply configuration changes after reviewing dry-run
+    - rollback_apply: Apply rollback after reviewing rollback_verify
+    
+    Args:
+        project_id: GitLab project ID or path (uses default if not specified)
+        job_id: Job ID to play (from get_gitlab_pipeline_status jobs list)
+    
+    Returns:
+        Job status and web URL after triggering
+    """
+    project = project_id or GITLAB_DEFAULT_PROJECT_ID
+    if not project:
+        return {"success": False, "error": "project_id required"}
+    if not job_id:
+        return {"success": False, "error": "job_id required"}
+    
+    result = _make_request("POST", f"projects/{project}/jobs/{job_id}/play")
+    
+    if not result["success"]:
+        return result
+    
+    job = result["data"]
+    return {
+        "success": True,
+        "job_id": job.get("id"),
+        "name": job.get("name"),
+        "status": job.get("status"),
+        "web_url": job.get("web_url"),
+        "pipeline_id": job.get("pipeline", {}).get("id") if job.get("pipeline") else None,
+        "message": f"Job '{job.get('name')}' (ID: {job.get('id')}) triggered successfully"
+    }
+
+
+@mcp.tool()
 def get_gitlab_repository_file(
     project_id: Optional[str] = None,
     file_path: str = "",
@@ -681,6 +723,7 @@ if __name__ == "__main__":
     print(f"   - get_gitlab_pipeline_status: Check pipeline status")
     print(f"   - get_gitlab_job_logs: Get job logs")
     print(f"   - get_gitlab_job_artifact: Download job artifacts")
+    print(f"   - play_gitlab_job: Play manual jobs (apply, rollback)")
     print(f"   - list_gitlab_projects: List accessible projects")
     print(f"   - list_gitlab_pipelines: List recent pipelines")
     print(f"   - get_gitlab_repository_file: Read repository files")

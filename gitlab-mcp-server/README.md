@@ -5,6 +5,7 @@ A FastMCP server that provides GitLab API integration for AI-driven CI/CD operat
 ## Features
 
 - **Pipeline Triggering**: Trigger CI/CD pipelines with controlled variables (e.g., Ansible dry-runs)
+- **Manual Job Execution**: Play manual jobs after dry-run (apply, rollback)
 - **Status Monitoring**: Check pipeline and job status in real-time
 - **Log Retrieval**: Get job logs to analyze dry-run output
 - **Artifact Download**: Download specific job artifacts (e.g., diff logs)
@@ -95,6 +96,25 @@ List recent pipelines for a project.
 - `project_id` (string, optional): Project ID or path
 - `per_page` (integer, optional): Results per page (default: 10)
 - `status` (string, optional): Filter by status
+
+### `play_gitlab_job`
+Play (trigger) a manual job in a GitLab pipeline.
+
+Use this to run manual jobs after a dry-run completes, such as:
+- `apply_config`: Apply configuration changes after reviewing dry-run
+- `rollback_apply`: Apply rollback after reviewing rollback_verify
+
+**Parameters:**
+- `project_id` (string, optional): Project ID or path
+- `job_id` (integer, required): Job ID to play (from `get_gitlab_pipeline_status` jobs list)
+
+**Example workflow:**
+```
+1. trigger_gitlab_pipeline with DRY_RUN=true
+2. get_gitlab_pipeline_status to find the manual apply_config job
+3. Review the dry-run output with get_gitlab_job_logs
+4. play_gitlab_job with the apply_config job ID to apply changes
+```
 
 ### `get_gitlab_repository_file`
 Read a file from the repository.
@@ -188,4 +208,18 @@ This server is designed for the **Orchestrator** workflow:
 1. **Intent Layer**: AI updates intended config in Git via `update_gitlab_repository_file`
 2. **Dry-Run**: AI triggers Ansible pipeline with `DRY_RUN=true`
 3. **Review**: AI retrieves logs/artifacts to show config diff
-4. **Apply**: User approves, AI triggers pipeline without dry-run flag
+4. **Apply**: User approves, AI uses `play_gitlab_job` to run the manual apply job
+
+### Workflow Example
+
+```
+User: "Add VLAN 100 on sw11-1"
+
+AI workflow:
+1. update_gitlab_repository_file → ansible/configs/desired/sw11-1.txt
+2. trigger_gitlab_pipeline → DRY_RUN=true, TARGET_HOST=sw11-1
+3. get_gitlab_pipeline_status → find job IDs
+4. get_gitlab_job_logs → show dry-run diff to user
+5. [User approves]
+6. play_gitlab_job → trigger apply_config job
+```
