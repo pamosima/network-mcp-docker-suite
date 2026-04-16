@@ -14,8 +14,23 @@ Features:
 - Certificate and profiling services
 - Read-only operations for security
 
+API surfaces (see Cisco ISE API Framework — API Gateway):
+https://developer.cisco.com/docs/identity-services-engine/latest/cisco-ise-api-framework/#cisco-ise-api-gateway
+
+From Cisco ISE 3.1 onward, ERS, Open API, and Monitoring (MnT) APIs are all reached through the
+**API Gateway**. This client talks to **one host** (ISE_HOST) on **standard HTTPS 443** — the same
+entry you use for the admin GUI. You do **not** point this MCP at a separate “MnT node” or at ports
+like 9443 / 9070; those are **between** the API Gateway node and other nodes inside the deployment.
+
+- ERS (configuration): GET https://<ise>/ers/config/...
+- Monitoring Session API (operational sessions, counters): GET https://<ise>/admin/API/mnt/Session/...
+  OpenAPI: [Monitoring Open API](https://pubhub.devnetcloud.com/media/identity-services-engine-api-v1/docs/endpoints/Monitoring-Open-API/monitoring-open-api.yaml)
+  (also indexed under [Cisco ISE API docs](https://developer.cisco.com/docs/identity-services-engine/latest/)). Base URL in the spec is `https://{server}/admin/API/mnt`.
+
 Environment Variables:
-- ISE_HOST: Required. Your Cisco ISE server hostname or IP
+- ISE_HOST: Required. Hostname or IP of the ISE node where the API Gateway is enabled (HTTPS 443)
+- ISE_MNT_HOST: Optional. Rare override only if Monitoring URLs must use a different hostname than
+  ISE_HOST (defaults to ISE_HOST). Normally omit this — use the API Gateway host for everything.
 - ISE_USERNAME: Required. Your ISE username with API access
 - ISE_PASSWORD: Required. Your ISE password
 - ISE_VERSION: Optional. ISE API version. Defaults to 1.0
@@ -28,14 +43,19 @@ Based on: https://github.com/automateyournetwork/ISE_MCP
 """
 
 import os
+import re
 import requests
 import urllib3
 from pathlib import Path
 from typing import Any, Dict, Optional
+from urllib.parse import quote
 from fastmcp import FastMCP
 
 # Disable SSL warnings if verify is False
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+# MnT Monitoring API paths — see monitoring-open-api.yaml (server: https://{server}/admin/API/mnt)
+MNT_PATH_SESSION_ACTIVE_LIST = "Session/ActiveList"
 
 # ---- Environment Variables ----
 def load_dotenv_file(env_file: str = ".env") -> bool:
@@ -73,6 +93,7 @@ ISE_USERNAME = os.getenv("ISE_USERNAME")
 ISE_PASSWORD = os.getenv("ISE_PASSWORD")
 ISE_VERSION = os.getenv("ISE_VERSION", "1.0")
 ISE_VERIFY_SSL = os.getenv("ISE_VERIFY_SSL", "False").lower() == "true"
+ISE_MNT_HOST = os.getenv("ISE_MNT_HOST")  # optional; defaults to ISE_HOST (same API Gateway)
 mcp_host = os.getenv("MCP_HOST", "localhost")
 mcp_port = int(os.getenv("MCP_PORT", "8005"))
 
@@ -80,36 +101,61 @@ mcp_port = int(os.getenv("MCP_PORT", "8005"))
 if not all([ISE_HOST, ISE_USERNAME, ISE_PASSWORD]):
     raise ValueError("ISE_HOST, ISE_USERNAME, and ISE_PASSWORD environment variables are required")
 
-print(f"🌐 ISE Server: {ISE_HOST}")
+if not ISE_MNT_HOST:
+    ISE_MNT_HOST = ISE_HOST
+
+print(f"🌐 ISE API Gateway host: {ISE_HOST} (HTTPS 443 — ERS + /admin/API/mnt/...)")
+if ISE_MNT_HOST != ISE_HOST:
+    print(f"📶 ISE_MNT_HOST override: {ISE_MNT_HOST} (Monitoring paths use this host)")
 print(f"👤 ISE User: {ISE_USERNAME}")
 print(f"🔐 SSL Verification: {ISE_VERIFY_SSL}")
 print(f"📡 API Version: {ISE_VERSION}")
 print(f"🚀 Starting MCP server on {mcp_host}:{mcp_port}")
 
+
+def _normalize_mac_for_mnt(mac: str) -> str:
+    """MnT Session API paths use colon-separated uppercase hex (see Session/MACAddress/...)."""
+    mac = mac.strip().upper().replace("-", ":")
+    if ":" not in mac and len(mac) == 12 and re.fullmatch(r"[0-9A-F]+", mac):
+        mac = ":".join(mac[i : i + 2] for i in range(0, 12, 2))
+    return mac
+
+
 class CiscoISEAPI:
-    """Cisco ISE REST API client"""
-    
-    def __init__(self, host: str, username: str, password: str, version: str = "1.0", verify_ssl: bool = False):
-        self.host = host.rstrip('/')
+    """Cisco ISE REST API client: ERS and Monitoring Session API via the same API Gateway host."""
+
+    def __init__(
+        self,
+        host: str,
+        username: str,
+        password: str,
+        version: str = "1.0",
+        verify_ssl: bool = False,
+        mnt_host: Optional[str] = None,
+    ):
+        self.host = host.rstrip("/")
+        # Same gateway host by default; optional split only if ISE_MNT_HOST is set
+        self.mnt_host = (mnt_host or host).rstrip("/")
         self.username = username
         self.password = password
         self.version = version
         self.verify_ssl = verify_ssl
         self.base_url = f"https://{self.host}/ers/config"
-        
+        self.mnt_base_url = f"https://{self.mnt_host}/admin/API/mnt"
+
         self.session = requests.Session()
         self.session.auth = (username, password)
         self.session.headers.update({
             "Content-Type": "application/json",
             "Accept": "application/json",
-            "User-Agent": "Network-MCP-Server/1.0 pamosima"
+            "User-Agent": "Network-MCP-Server/1.0 pamosima",
         })
         self.session.verify = verify_ssl
-    
+
     def get(self, endpoint: str, params: Optional[Dict] = None) -> Dict[str, Any]:
         """Make GET request to ISE ERS API"""
         url = f"{self.base_url}/{endpoint.lstrip('/')}"
-        
+
         try:
             response = self.session.get(url, params=params)
             response.raise_for_status()
@@ -118,8 +164,47 @@ class CiscoISEAPI:
             print(f"❌ ISE API Error: {e}")
             raise
 
+    def get_mnt(self, path: str) -> Dict[str, Any]:
+        """
+        GET https://<API Gateway host>/admin/API/mnt/<path> (Monitoring Session API family).
+
+        Routed through the API Gateway on 443 like ERS; not a separate “MnT node” connection from
+        this client. Session paths match Monitoring OpenAPI (e.g. ActiveList, MACAddress/{mac},
+        UserName/{username}, ActiveCount). Successful responses are typically application/xml.
+        """
+        url = f"{self.mnt_base_url}/{path.lstrip('/')}"
+        headers = {
+            "Accept": "application/xml, application/json, text/xml, */*",
+        }
+        try:
+            response = self.session.get(url, headers=headers)
+            response.raise_for_status()
+            ct = (response.headers.get("Content-Type") or "").lower()
+            if "json" in ct:
+                data = response.json()
+                if isinstance(data, dict):
+                    data["_mnt_path"] = path
+                return data
+            text = response.text
+            return {
+                "_mnt_path": path,
+                "content_type": response.headers.get("Content-Type", ""),
+                "body": text,
+            }
+        except Exception as e:
+            print(f"❌ ISE MnT API Error: {e}")
+            raise
+
+
 # Initialize ISE API client
-ise_api = CiscoISEAPI(ISE_HOST, ISE_USERNAME, ISE_PASSWORD, ISE_VERSION, ISE_VERIFY_SSL)
+ise_api = CiscoISEAPI(
+    ISE_HOST,
+    ISE_USERNAME,
+    ISE_PASSWORD,
+    ISE_VERSION,
+    ISE_VERIFY_SSL,
+    mnt_host=ISE_MNT_HOST,
+)
 
 # Initialize FastMCP
 mcp = FastMCP("Cisco ISE MCP Server")
@@ -167,9 +252,9 @@ ISE_ENDPOINTS = {
         "filterable": ["name", "guestType", "sponsorUserName"]
     },
     "active_sessions": {
-        "path": "session",
-        "description": "Active network access sessions",
-        "filterable": ["userName", "endPointMACAddress", "nasIPAddress"]
+        "path": f"MnT {MNT_PATH_SESSION_ACTIVE_LIST}",
+        "description": "Active sessions via Monitoring OpenAPI Session/ActiveList (not ERS)",
+        "filterable": ["mac.EQ", "userName.EQ"],
     },
     "profiler_profiles": {
         "path": "profilerprofile",
@@ -394,21 +479,49 @@ def ise_get_active_sessions(
     size: int = 20
 ) -> Dict[str, Any]:
     """
-    Get active network access sessions
-    
+    Get active network access sessions via the Monitoring Session API (OpenAPI: getActiveSessionList).
+
+    Uses Session/ActiveList, or Session/MACAddress/{mac} / Session/UserName/{username} when filtered.
+    Spec: monitoring-open-api.yaml paths /Session/ActiveList, /Session/MACAddress/{mac}, /Session/UserName/{username}.
+
     Args:
-        filter_expression: Filter in format 'field.OPERATION.value' (e.g., 'userName.CONTAINS.john')
-        page: Page number for pagination (default: 1)
-        size: Number of results per page (default: 20, max: 100)
-    
+        filter_expression: Optional. For MnT lookups use 'mac.EQ.00:11:22:33:44:55' or 'userName.EQ.jsmith'.
+          Other ERS-style filters are not applied; omit to retrieve ActiveList (typically application/xml).
+        page: Not used by MnT ActiveList (included for call compatibility only).
+        size: Not used by MnT ActiveList (included for call compatibility only).
+
     Returns:
-        Dict containing active session information
+        Dict: JSON from ISE when applicable, or MnT payload with body (XML) and content_type.
     """
-    params = {"page": page, "size": min(size, 100)}
+    _ = (page, size)  # MnT list endpoint does not use ERS pagination parameters
+
     if filter_expression:
-        params["filter"] = filter_expression
-    
-    return ise_api.get("session", params=params)
+        fe = filter_expression.strip()
+        m = re.match(r"(?i)mac\.(?:EQ|eq)\.(.+)", fe)
+        if m:
+            return ise_api.get_mnt(f"Session/MACAddress/{_normalize_mac_for_mnt(m.group(1))}")
+        m = re.match(r"(?i)userName\.(?:EQ|eq)\.(.+)", fe)
+        if m:
+            return ise_api.get_mnt(f"Session/UserName/{quote(m.group(1), safe='')}")
+        out = ise_api.get_mnt(MNT_PATH_SESSION_ACTIVE_LIST)
+        if isinstance(out, dict):
+            out["_filter_note"] = (
+                "filter_expression was not mac.EQ or userName.EQ; returned full ActiveList. "
+                "Use mac.EQ.<mac> or userName.EQ.<user> for targeted MnT lookup."
+            )
+        return out
+
+    return ise_api.get_mnt(MNT_PATH_SESSION_ACTIVE_LIST)
+
+
+@mcp.tool()
+def ise_get_active_session_count() -> Dict[str, Any]:
+    """
+    Return the count of active sessions (Monitoring OpenAPI: GET /Session/ActiveCount, getActiveSessionCount).
+    Response is typically application/xml (schema sessionCount in the spec).
+    """
+    return ise_api.get_mnt("Session/ActiveCount")
+
 
 @mcp.tool()
 def ise_get_profiler_profiles(
@@ -524,16 +637,15 @@ def ise_search_endpoint_by_mac(mac_address: str) -> Dict[str, Any]:
 @mcp.tool()
 def ise_search_user_sessions(username: str) -> Dict[str, Any]:
     """
-    Search for active sessions by username
-    
+    Search for active sessions by username (OpenAPI: GET /Session/UserName/{username}, getFullSDUsernameInfo).
+
     Args:
-        username: Username to search for
-    
+        username: Username to search for (case-sensitive per Cisco MnT API)
+
     Returns:
         Dict containing active session information for the specified user
     """
-    filter_expr = f"userName.EQ.{username}"
-    return ise_api.get("session", params={"filter": filter_expr})
+    return ise_api.get_mnt(f"Session/UserName/{quote(username, safe='')}")
 
 @mcp.tool()
 def ise_get_device_compliance_status(mac_address: str) -> Dict[str, Any]:
@@ -627,8 +739,7 @@ def ise_get_tacacs_profiles(
 
 if __name__ == "__main__":
     print("🚀 Starting Cisco ISE MCP Server...")
-    
-    # Test ISE API connectivity
+
     try:
         ise_api.get("networkdevice", params={"size": 1})
         print("✅ Successfully connected to ISE ERS API")
@@ -637,6 +748,5 @@ if __name__ == "__main__":
         print(f"❌ Failed to connect to ISE API: {e}")
         print("💡 Please check your ISE credentials, host connectivity, and ERS API status")
         exit(1)
-    
-    # Start the MCP server
+
     mcp.run(transport="http", host=mcp_host, port=mcp_port)
