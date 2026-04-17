@@ -151,13 +151,21 @@ nano .env
 
 ### ISE Prerequisites
 
-#### 1. Enable ERS API on ISE
+#### 1. API Settings, API Gateway, and ERS (ISE 3.x)
 
-1. **Log into ISE Admin Portal**
-2. **Navigate to**: Administration → Settings → ERS Settings
-3. **Enable ERS**: Check "Enable ERS for Read/Write"
-4. **Configure HTTPS**: Ensure HTTPS is enabled
-5. **Save Configuration**
+Cisco exposes **ERS**, **OpenAPI**, and **Monitoring (MnT)** APIs over **HTTPS** (typically **port 443**). From **ISE 3.1** onward, **MnT**, **ERS**, and **OpenAPI** are routed through the **API Gateway** (single entry point on the gateway node). Use **port 443** for ERS; **9060** may not be supported in later releases.
+
+1. **Log into** the ISE Admin GUI.
+2. **Navigate to**: **Administration** → **System** → **Settings** → **API Settings**.
+3. **API Service Settings**
+   - Enable the **ERS API** service if it is disabled (**ERS is off by default**; **OpenAPI** is enabled by default and cannot be disabled).
+   - **CSRF:** If **Use CSRF Check for Enhanced Security** is enabled, REST clients must send a valid **CSRF token** on ERS requests. This MCP server uses **HTTP Basic Auth** only; if you see CSRF-related failures, either disable CSRF for ERS requests (per Cisco’s API Service Settings) or switch to a client that implements token fetch (not implemented here).
+4. **API Gateway Settings**
+   - Ensure the **API Gateway** is **enabled** on the intended node(s) (often the primary PAN; in distributed deployments you may enable it on multiple nodes per Cisco guidance).
+   - Confirm **MnT**, **ERS**, and **OpenAPI** are routed via the gateway on **443** as shown in the **API Gateway Overview** in the GUI.
+5. **Save** and verify **HTTPS** access to your ISE hostname on **443**.
+
+Official overview: [Cisco ISE API Framework (API Gateway)](https://developer.cisco.com/docs/identity-services-engine/latest/cisco-ise-api-framework/#cisco-ise-api-gateway).
 
 #### 2. Create ISE User Account
 
@@ -170,7 +178,11 @@ nano .env
 3. **Assign Groups**: Add to "ERS Admin" or "ERS Operator" group
 4. **Enable Account**: Ensure account is enabled and not expired
 
-#### 3. Network Connectivity
+#### 3. Monitoring (MnT) API access
+
+Tools that read **active sessions** or session **counts** use **Monitoring** URLs under `/admin/API/mnt/...`. That traffic uses the **same** `ISE_HOST` and **443** via the **API Gateway**. Ensure the account has an administrative role that may use **Monitoring** REST APIs (e.g. **Super Admin** or **MnT Admin** / deployment-specific groups—see Cisco documentation for your release). **ERS Operator** alone may not be sufficient for all MnT endpoints.
+
+#### 4. Network Connectivity
 
 - Ensure network connectivity to ISE on HTTPS (port 443)
 - Verify firewall rules allow API access
@@ -310,10 +322,11 @@ mcpServers:
 
 **🔐 ERS API Not Enabled**
 ```bash
-# Error: 404 or connection refused
-# Solution: Enable ERS API in ISE
-# Navigate to: Administration > Settings > ERS Settings
-# Enable "Enable ERS for Read/Write"
+# Error: 404 or connection refused on /ers/config/...
+# Solution: Enable the ERS API service in ISE
+# Navigate to: Administration > System > Settings > API Settings > API Service Settings
+# Enable ERS API (read/write per your policy). Ensure API Gateway is enabled under API Gateway Settings.
+# Prefer HTTPS port 443. See "ISE Prerequisites" above.
 ```
 
 **🔐 Authentication Errors**

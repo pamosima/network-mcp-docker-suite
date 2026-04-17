@@ -22,15 +22,21 @@ From Cisco ISE 3.1 onward, ERS, Open API, and Monitoring (MnT) APIs are all reac
 entry you use for the admin GUI. You do **not** point this MCP at a separate “MnT node” or at ports
 like 9443 / 9070; those are **between** the API Gateway node and other nodes inside the deployment.
 
+**ISE GUI (3.x):** In **Administration > System > Settings > API Settings**, use **API Service Settings**
+to enable the **ERS API** service (it is **off by default**; OpenAPI is on by default). Use **API Gateway
+Settings** so **MnT**, **ERS**, and **OpenAPI** traffic is routed through the **API Gateway** on **HTTPS 443**.
+Assign the API user to **ERS Admin** or **ERS Operator**. Prefer **port 443** for ERS; **9060** may be
+removed in a future release.
+
 - ERS (configuration): GET https://<ise>/ers/config/...
 - Monitoring Session API (operational sessions, counters): GET https://<ise>/admin/API/mnt/Session/...
   OpenAPI: [Monitoring Open API](https://pubhub.devnetcloud.com/media/identity-services-engine-api-v1/docs/endpoints/Monitoring-Open-API/monitoring-open-api.yaml)
   (also indexed under [Cisco ISE API docs](https://developer.cisco.com/docs/identity-services-engine/latest/)). Base URL in the spec is `https://{server}/admin/API/mnt`.
 
 Environment Variables:
-- ISE_HOST: Required. Hostname or IP of the ISE node where the API Gateway is enabled (HTTPS 443)
-- ISE_MNT_HOST: Optional. Rare override only if Monitoring URLs must use a different hostname than
-  ISE_HOST (defaults to ISE_HOST). Normally omit this — use the API Gateway host for everything.
+- ISE_HOST: Required. Hostname or IP of the ISE node where the API Gateway is enabled (HTTPS 443).
+  In the ISE GUI: enable **API Service Settings** (ERS API) and **API Gateway Settings** under
+  **Administration > System > Settings > API Settings** (see README).
 - ISE_USERNAME: Required. Your ISE username with API access
 - ISE_PASSWORD: Required. Your ISE password
 - ISE_VERSION: Optional. ISE API version. Defaults to 1.0
@@ -93,7 +99,6 @@ ISE_USERNAME = os.getenv("ISE_USERNAME")
 ISE_PASSWORD = os.getenv("ISE_PASSWORD")
 ISE_VERSION = os.getenv("ISE_VERSION", "1.0")
 ISE_VERIFY_SSL = os.getenv("ISE_VERIFY_SSL", "False").lower() == "true"
-ISE_MNT_HOST = os.getenv("ISE_MNT_HOST")  # optional; defaults to ISE_HOST (same API Gateway)
 mcp_host = os.getenv("MCP_HOST", "localhost")
 mcp_port = int(os.getenv("MCP_PORT", "8005"))
 
@@ -101,12 +106,7 @@ mcp_port = int(os.getenv("MCP_PORT", "8005"))
 if not all([ISE_HOST, ISE_USERNAME, ISE_PASSWORD]):
     raise ValueError("ISE_HOST, ISE_USERNAME, and ISE_PASSWORD environment variables are required")
 
-if not ISE_MNT_HOST:
-    ISE_MNT_HOST = ISE_HOST
-
 print(f"🌐 ISE API Gateway host: {ISE_HOST} (HTTPS 443 — ERS + /admin/API/mnt/...)")
-if ISE_MNT_HOST != ISE_HOST:
-    print(f"📶 ISE_MNT_HOST override: {ISE_MNT_HOST} (Monitoring paths use this host)")
 print(f"👤 ISE User: {ISE_USERNAME}")
 print(f"🔐 SSL Verification: {ISE_VERIFY_SSL}")
 print(f"📡 API Version: {ISE_VERSION}")
@@ -131,17 +131,14 @@ class CiscoISEAPI:
         password: str,
         version: str = "1.0",
         verify_ssl: bool = False,
-        mnt_host: Optional[str] = None,
     ):
         self.host = host.rstrip("/")
-        # Same gateway host by default; optional split only if ISE_MNT_HOST is set
-        self.mnt_host = (mnt_host or host).rstrip("/")
         self.username = username
         self.password = password
         self.version = version
         self.verify_ssl = verify_ssl
         self.base_url = f"https://{self.host}/ers/config"
-        self.mnt_base_url = f"https://{self.mnt_host}/admin/API/mnt"
+        self.mnt_base_url = f"https://{self.host}/admin/API/mnt"
 
         self.session = requests.Session()
         self.session.auth = (username, password)
@@ -203,7 +200,6 @@ ise_api = CiscoISEAPI(
     ISE_PASSWORD,
     ISE_VERSION,
     ISE_VERIFY_SSL,
-    mnt_host=ISE_MNT_HOST,
 )
 
 # Initialize FastMCP
