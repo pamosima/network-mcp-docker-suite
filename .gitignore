@@ -48,6 +48,6 @@ Thumbs.db
 # Logs
 *.log
 
-# UV lock file (can be committed, but optional)
-# uv.lock
+# UV lock file (local / optional; not committed in this repo)
+uv.lock
 
