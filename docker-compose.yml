@@ -252,14 +252,19 @@ services:
     container_name: splunk-mcp-server
     restart: unless-stopped
     
-    # Load environment variables from .env file
+    # Load environment variables from .env file (injects into process env; no file in image)
     env_file:
       - ./.env
-    
+
+    # Optional: make the same file visible at /app/.env so the app can read it on disk
+    # (mirrors env_file; use either this mount or env_file, or both)
+    volumes:
+      - ./.env:/app/.env:ro
+
     # Environment variables (override any from .env file if needed)
     environment:
       - MCP_HOST=0.0.0.0
-      
+
     # Port mapping: host:container
     ports:
       - "8006:8006"
