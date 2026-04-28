@@ -119,7 +119,7 @@ user_sessions = ise_search_user_sessions(username="john.doe")
 
 # Monitor sessions by device
 device_sessions = ise_get_active_sessions(
-    filter_expression="endPointMACAddress.EQ.00:50:56:C0:00:01"
+    filter_expression="mac.EQ.00:50:56:C0:00:01"
 )
 
 # Get profiler classifications
@@ -145,7 +145,8 @@ nano .env
 | **`ISE_USERNAME`** | **ISE username with ERS API access** | - | **✅ YES** |
 | **`ISE_PASSWORD`** | **ISE user password** | - | **✅ YES** |
 | `ISE_VERSION` | ISE API version | `1.0` | No |
-| `ISE_VERIFY_SSL` | SSL certificate verification | `False` | No |
+| `ISE_VERIFY_SSL` | SSL certificate verification | `True` | No |
+| `ISE_REQUEST_TIMEOUT` | ISE API request timeout (seconds) | `30` | No |
 | `MCP_HOST` | Server bind address | `localhost` | No |
 | `MCP_PORT` | Server port | `8005` | No |
 
@@ -201,7 +202,8 @@ ISE_PASSWORD=SecurePassword123!
 
 # Optional: API and server configuration  
 ISE_VERSION=1.0
-ISE_VERIFY_SSL=False
+ISE_VERIFY_SSL=True
+ISE_REQUEST_TIMEOUT=30
 MCP_HOST=localhost
 MCP_PORT=8005
 ```
