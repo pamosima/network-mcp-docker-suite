@@ -40,7 +40,8 @@ Environment Variables:
 - ISE_USERNAME: Required. Your ISE username with API access
 - ISE_PASSWORD: Required. Your ISE password
 - ISE_VERSION: Optional. ISE API version. Defaults to 1.0
-- ISE_VERIFY_SSL: Optional. SSL verification. Defaults to False
+- ISE_VERIFY_SSL: Optional. SSL verification. Defaults to True
+- ISE_REQUEST_TIMEOUT: Optional. HTTP timeout in seconds for ISE API requests. Defaults to 30
 - MCP_PORT: Optional. Port for MCP server. Defaults to 8005
 - MCP_HOST: Optional. Host for MCP server. Defaults to localhost
 
@@ -83,7 +84,10 @@ def load_dotenv_file(env_file: str = ".env") -> bool:
                     key, value = line.split('=', 1)
                     # Remove quotes if present
                     value = value.strip().strip('\'"')
-                    os.environ[key.strip()] = value
+                    key = key.strip()
+                    # Do not override existing process-level environment variables.
+                    if key not in os.environ:
+                        os.environ[key] = value
         print(f"✅ Loaded environment variables from {env_path}")
         return True
     except Exception as e:
@@ -98,7 +102,12 @@ ISE_HOST = os.getenv("ISE_HOST")
 ISE_USERNAME = os.getenv("ISE_USERNAME")
 ISE_PASSWORD = os.getenv("ISE_PASSWORD")
 ISE_VERSION = os.getenv("ISE_VERSION", "1.0")
-ISE_VERIFY_SSL = os.getenv("ISE_VERIFY_SSL", "False").lower() == "true"
+ISE_VERIFY_SSL = os.getenv("ISE_VERIFY_SSL", "True").lower() == "true"
+try:
+    ISE_REQUEST_TIMEOUT = float(os.getenv("ISE_REQUEST_TIMEOUT", "30"))
+except ValueError:
+    print("⚠️  Invalid ISE_REQUEST_TIMEOUT value; defaulting to 30 seconds")
+    ISE_REQUEST_TIMEOUT = 30.0
 mcp_host = os.getenv("MCP_HOST", "localhost")
 mcp_port = int(os.getenv("MCP_PORT", "8005"))
 
@@ -109,6 +118,7 @@ if not all([ISE_HOST, ISE_USERNAME, ISE_PASSWORD]):
 print(f"🌐 ISE API Gateway host: {ISE_HOST} (HTTPS 443 — ERS + /admin/API/mnt/...)")
 print(f"👤 ISE User: {ISE_USERNAME}")
 print(f"🔐 SSL Verification: {ISE_VERIFY_SSL}")
+print(f"⏱️ ISE Request Timeout: {ISE_REQUEST_TIMEOUT}s")
 print(f"📡 API Version: {ISE_VERSION}")
 print(f"🚀 Starting MCP server on {mcp_host}:{mcp_port}")
 
@@ -131,12 +141,14 @@ class CiscoISEAPI:
         password: str,
         version: str = "1.0",
         verify_ssl: bool = False,
+        request_timeout: float = 30.0,
     ):
         self.host = host.rstrip("/")
         self.username = username
         self.password = password
         self.version = version
         self.verify_ssl = verify_ssl
+        self.request_timeout = request_timeout
         self.base_url = f"https://{self.host}/ers/config"
         self.mnt_base_url = f"https://{self.host}/admin/API/mnt"
 
@@ -154,7 +166,7 @@ class CiscoISEAPI:
         url = f"{self.base_url}/{endpoint.lstrip('/')}"
 
         try:
-            response = self.session.get(url, params=params)
+            response = self.session.get(url, params=params, timeout=self.request_timeout)
             response.raise_for_status()
             return response.json()
         except Exception as e:
@@ -174,7 +186,7 @@ class CiscoISEAPI:
             "Accept": "application/xml, application/json, text/xml, */*",
         }
         try:
-            response = self.session.get(url, headers=headers)
+            response = self.session.get(url, headers=headers, timeout=self.request_timeout)
             response.raise_for_status()
             ct = (response.headers.get("Content-Type") or "").lower()
             if "json" in ct:
@@ -200,6 +212,7 @@ ise_api = CiscoISEAPI(
     ISE_PASSWORD,
     ISE_VERSION,
     ISE_VERIFY_SSL,
+    ISE_REQUEST_TIMEOUT,
 )
 
 # Initialize FastMCP
