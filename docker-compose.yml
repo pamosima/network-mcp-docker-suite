@@ -428,7 +428,7 @@ services:
       - MCP_PORT=8010
 
     ports:
-      - "8010:8010"
+      - "8012:8010"
 
     security_opt:
       - no-new-privileges:true

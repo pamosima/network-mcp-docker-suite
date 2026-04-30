@@ -30,7 +30,7 @@ Enable the container with `ENABLE_SUITE_GATEWAY_MCP=true` in `.env` (see root `.
 ## Docker Compose
 
 - Service: `suite-gateway-mcp-server`
-- Published port: **8010**
+- Published host port: **8012** (maps to container `8010`; avoids clashes with other stacks on `8010`)
 - Start with other servers, e.g. `./deploy.sh start all` (if the gateway is enabled in `.env`), or only the gateway: `./deploy.sh start suite-gateway`
 
 **Important:** Start the backends you care about **before** or **with** the gateway so `tools/list` can succeed. The gateway does not start other containers for you.
@@ -50,16 +50,16 @@ mcpServers:
 ```json
 "Suite-MCP-Gateway": {
   "transport": "http",
-  "url": "http://localhost:8010/mcp",
+  "url": "http://localhost:8012/mcp",
   "timeout": 120000
 }
 ```
 
-Use the same `Accept` behavior your client expects for streamable HTTP; Cursor typically works with the gateway’s `streamable-http` transport on port 8010.
+Use the same `Accept` behavior your client expects for streamable HTTP; Cursor typically works with the gateway’s `streamable-http` transport on host port **8012** (or `suite-gateway-mcp-server:8010` inside Docker).
 
 ## Security notes
 
-- This gateway **does not** add OIDC or OPA; it forwards to existing suite servers. Protect port **8010** at the network layer or put an authenticating reverse proxy in front for production.
+- This gateway **does not** add OIDC or OPA; it forwards to existing suite servers. Protect the published port at the network layer or put an authenticating reverse proxy in front for production.
 - Tool descriptions include the backend URL and original tool name for traceability.
 
 ## License

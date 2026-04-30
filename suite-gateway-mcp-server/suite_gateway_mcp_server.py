@@ -291,6 +291,7 @@ def _build_proxy_function(
     g: dict[str, Any] = {
         "_invoke": invoke,
         "__builtins__": __builtins__,
+        "Any": Any,  # signatures from JSON Schema may use Any; exec namespace must resolve it
     }
     lcl: dict[str, Any] = {}
     src = (
