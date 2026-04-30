@@ -13,6 +13,8 @@ services:
     networks: ['mcp-server']
   splunk-mcp-server:
     networks: ['mcp-server']
+  suite-gateway-mcp-server:
+    networks: ['mcp-server']
 
 networks:
   mcp-server:

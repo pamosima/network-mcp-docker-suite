@@ -17,7 +17,7 @@ AI-Powered Network Troubleshooting with LibreChat using Multiple MCP Servers
 
 ## 📋 Description
 
-This **AIOps-focused** Docker suite contains ten MCP servers enabling AI-driven network operations:
+This **AIOps-focused** Docker suite contains eleven MCP servers (ten platform servers plus an optional **suite gateway**) enabling AI-driven network operations:
 
 - **Meraki MCP Server** (8000): Cloud network management through Meraki Dashboard API - [📖 Details](meraki-mcp-server/README.md)
 - **NetBox MCP Server** (8001): DCIM/IPAM infrastructure documentation and management - [📖 Details](netbox-mcp-server/README.md)
@@ -29,6 +29,7 @@ This **AIOps-focused** Docker suite contains ten MCP servers enabling AI-driven 
 - **Prometheus MCP Server** (8007): Metrics queries for network monitoring ([netops-stack](https://github.com/pamosima/netops-stack)) - [📖 Details](prometheus-mcp-server/README.md)
 - **ClickHouse MCP Server** (8008): Syslog and log queries for troubleshooting ([netops-stack](https://github.com/pamosima/netops-stack)) - [📖 Details](clickhouse-mcp-server/README.md)
 - **GitLab MCP Server** (8009): CI/CD pipeline triggering and repository management for network automation - [📖 Details](gitlab-mcp-server/README.md)
+- **Suite MCP Gateway** (8010, optional): One MCP URL that discovers and proxies tools from the other suite servers — ideal for LibreChat with a single `mcpServers` entry - [📖 Details](suite-gateway-mcp-server/README.md)
 
 All servers are containerized with flexible deployment profiles, enabling **AIOps workflows** through natural language queries, automated troubleshooting, and intelligent network analytics via AI assistants.
 
@@ -140,6 +141,7 @@ The suite provides direct access to seven containerized MCP servers, perfect for
 │                 │────┼─▶│ ClickHouse MCP    :8008     │ │
 │                 │    │  ├─────────────────────────────┤ │
 │                 │────┼─▶│ GitLab MCP        :8009     │ │
+│                 │────┼─▶│ Suite MCP Gateway :8010     │ │
 │                 │    │  └─────────────────────────────┘ │
 └─────────────────┘    └──────────────────────────────────┘
         
@@ -223,6 +225,7 @@ ENABLE_SPLUNK_MCP=false      # Disabled - won't start
 ENABLE_PROMETHEUS_MCP=true   # netops-stack metrics
 ENABLE_CLICKHOUSE_MCP=true   # netops-stack syslog
 ENABLE_GITLAB_MCP=true       # CI/CD orchestration
+ENABLE_SUITE_GATEWAY_MCP=false  # Single MCP URL aggregating other servers (8010)
 ```
 
 **Best Practices:**
@@ -235,7 +238,7 @@ ENABLE_GITLAB_MCP=true       # CI/CD orchestration
 
 | Profile | Description | Servers Deployed | Use Case |
 |---------|-------------|------------------|----------|
-| `all` | Deploy all servers | All 10 servers (8000-8009) | Complete infrastructure visibility |
+| `all` | Deploy all enabled servers | All suite servers including optional gateway (8000-8010) | Complete infrastructure visibility |
 | `cisco` | Cisco-focused platforms | Meraki + Catalyst Center + ThousandEyes + ISE + IOS XE | Cisco-centric environments |
 | `monitoring` | Network monitoring | Meraki + Catalyst Center + ThousandEyes + Splunk | Operations teams |
 | `observability` | netops-stack metrics/logs | Prometheus + ClickHouse + NetBox | AI-driven troubleshooting |
@@ -332,6 +335,7 @@ The AI assistant automatically uses both MCP servers working together:
 | Prometheus | 8007 | `http://localhost:8007/mcp` | Metrics queries (netops-stack) |
 | ClickHouse | 8008 | `http://localhost:8008/mcp` | Syslog queries (netops-stack) |
 | GitLab | 8009 | `http://localhost:8009/mcp` | CI/CD & repository management |
+| Suite gateway | 8010 | `http://localhost:8010/mcp` | Aggregated tools from enabled backends |
 
 ## 🌐 MCP Client Integration
 

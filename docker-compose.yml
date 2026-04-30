@@ -412,3 +412,38 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+  suite-gateway-mcp-server:
+    build:
+      context: ./suite-gateway-mcp-server
+      dockerfile: Dockerfile
+    container_name: suite-gateway-mcp-server
+    restart: unless-stopped
+
+    env_file:
+      - ./.env
+
+    environment:
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=8010
+
+    ports:
+      - "8010:8010"
+
+    security_opt:
+      - no-new-privileges:true
+
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

@@ -12,6 +12,7 @@
 # - Prometheus MCP Server: Metrics queries (gnp-stack/netops-stack)
 # - ClickHouse MCP Server: Syslog queries (gnp-stack/netops-stack)
 # - GitLab MCP Server: CI/CD pipeline orchestration
+# - Suite Gateway MCP Server: single endpoint aggregating other MCP servers
 #
 # Features:
 # - Enable/disable individual servers via .env file (ENABLE_*_MCP)
@@ -81,6 +82,9 @@ is_enabled() {
         "gitlab-mcp-server")
             var_name="ENABLE_GITLAB_MCP"
             ;;
+        "suite-gateway-mcp-server")
+            var_name="ENABLE_SUITE_GATEWAY_MCP"
+            ;;
     esac
     
     # If no .env file or variable not set, default to enabled
@@ -139,7 +143,7 @@ show_usage() {
     echo "  cleanup   Stop and remove disabled servers"
     echo ""
     echo "Profiles:"
-    echo "  all         All servers (all 10 MCP servers)"
+    echo "  all         All servers (all 11 MCP servers including suite gateway)"
     echo "  meraki      Meraki MCP server only"
     echo "  netbox      NetBox MCP server only"
     echo "  catc        Catalyst Center MCP server only"
@@ -150,6 +154,7 @@ show_usage() {
     echo "  prometheus  Prometheus MCP server only"
     echo "  clickhouse  ClickHouse MCP server only"
     echo "  gitlab      GitLab MCP server only"
+    echo "  suite-gateway  Suite MCP gateway only (aggregates other MCP servers)"
     echo "  cisco       Cisco-focused (Meraki + Catalyst Center + ThousandEyes + ISE + IOS XE)"
     echo "  network     Network management (Meraki + ThousandEyes + IOS XE)"
     echo "  security    Security-focused (Catalyst Center + ISE)"
@@ -182,7 +187,7 @@ build_service_args() {
     local profile=$1
     case $profile in
         "all")
-            echo "meraki-mcp-servers netbox-mcp-server catc-mcp-server thousandeyes-mcp-server ise-mcp-server ios-xe-mcp-server splunk-mcp-server prometheus-mcp-server clickhouse-mcp-server gitlab-mcp-server"
+            echo "meraki-mcp-servers netbox-mcp-server catc-mcp-server thousandeyes-mcp-server ise-mcp-server ios-xe-mcp-server splunk-mcp-server prometheus-mcp-server clickhouse-mcp-server gitlab-mcp-server suite-gateway-mcp-server"
             ;;
         "meraki")
             echo "meraki-mcp-servers"
@@ -213,6 +218,9 @@ build_service_args() {
             ;;
         "gitlab"|"gl")
             echo "gitlab-mcp-server"
+            ;;
+        "suite-gateway"|"gateway")
+            echo "suite-gateway-mcp-server"
             ;;
         "cisco")
             echo "meraki-mcp-servers catc-mcp-server thousandeyes-mcp-server ise-mcp-server ios-xe-mcp-server"
