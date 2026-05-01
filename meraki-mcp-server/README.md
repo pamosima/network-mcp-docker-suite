@@ -18,37 +18,30 @@ This MCP server provides **comprehensive** API-based access to Cisco Meraki Dash
 
 ### Available Tools
 
-**Organization & Network Management:**
-- **`get_organizations`**: List organizations accessible to the user
-- **`get_organization_networks`**: List networks within an organization
-- **`get_network_devices`**: List devices in a specific network
-- **`get_organization_devices`**: List all devices across an organization
+Tools are generated from **`openapi/spec3.json`** via FastMCP. Which operations become MCP tools depends on **`MCP_ROLE`** (see `meraki_mcp_server.py` `RouteMap` lists).
 
-**Device Management & Monitoring:**
-- **`get_device_statuses`**: Get operational status of network devices
-- **`get_device_uplink_statuses`**: Monitor WAN uplink connectivity
-- **`get_network_clients`**: List and monitor network clients
-- **`get_device_clients`**: Get clients connected to specific devices
+**`noc` and `sysadmin` (curated, read-heavy “CATC mirror”)**  
+Both roles include the original discovery set plus **read-only GET** routes grouped like the Catalyst Center MCP server (inventory, topology, clients, health, assurance alerts, templates). Highlights:
 
-**Wireless Operations:**
-- **`get_network_ssids`**: List and manage wireless SSIDs
-- **`get_network_wireless_settings`**: Access wireless network configuration
-- **`get_wireless_client_connectivity_events`**: Monitor wireless client events
+| Theme | Example OpenAPI paths (GET only) |
+|--------|-----------------------------------|
+| Organizations / networks | `/organizations`, `/organizations/{organizationId}/networks` |
+| Device inventory | `/organizations/{organizationId}/devices`, `/networks/{networkId}/devices`, `/devices/{serial}` |
+| Firmware / licenses (existing) | `/organizations/{organizationId}/firmware/upgrades`, `.../licenses/overview` |
+| Topology | `/networks/{networkId}/topology/linkLayer`, `/devices/{serial}/lldpCdp`, org switch port topology discovery |
+| Clients | `/networks/{networkId}/clients` (+ overview, application usage, histories), `/devices/{serial}/clients`, org `clients/search`, wireless aggregate + **per-client** `wireless/clients/{clientId}/connectionStats|latencyStats|latencyHistory|connectivityEvents`, org `wireless/clients/overview/byDevice`, `switch/ports/clients/overview/byDevice`, `summary/top/clients/byUsage` (+ manufacturers), optional **`appliance/clients/{clientId}/security/events`** (GET) |
+| Health / performance | `/networks/{networkId}/networkHealth/channelUtilization`, `.../health/alerts`, insight app health by time, org summary `.../summary/top/networks/byStatus`, device `appliance/performance`, `lossAndLatencyHistory`, wireless `status` |
+| Assurance / alerts (no dismiss) | `/organizations/{organizationId}/assurance/alerts` (+ overview variants, taxonomy, single alert by id), network `alerts/history`, sensor alert overviews |
+| Config templates (read) | `/organizations/{organizationId}/configTemplates`, `.../configTemplates/{configTemplateId}` |
 
-**Security & Firewall:**
-- **`get_network_appliance_firewall_l3_firewall_rules`**: Manage Layer 3 firewall rules
-- **`get_network_appliance_firewall_l7_firewall_rules`**: Manage Layer 7 application firewall
-- **`get_network_appliance_security_events`**: Monitor security events and threats
+**`noc` only:** `PUT /networks/{networkId}/firmwareUpgrades` (same as before).
 
-**Analytics & Reporting:**
-- **`get_organization_api_requests`**: Monitor API usage and rate limits
-- **`get_network_traffic_analysis`**: Analyze network traffic patterns
-- **`get_organization_licensing_coterm_licenses`**: Monitor licensing status
+**`all` (firehose):** No route filter — the entire Dashboard API surface in the OpenAPI file can be exposed as tools (operational risk; use only when you intend full access).
 
 ### Role-Based Access Control
 
-- **`noc`**: Network Operations Center - monitoring + firmware upgrades
-- **`sysadmin`**: System Administrator - read-only access
+- **`noc`**: Discovery + CATC-scope GETs + firmware upgrade PUT
+- **`sysadmin`**: Discovery + CATC-scope GETs only (no firmware PUT)
 - **`all`**: Full API access (complete Meraki Dashboard API)
 
 ### Security Features

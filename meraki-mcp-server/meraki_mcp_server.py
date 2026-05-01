@@ -206,6 +206,185 @@ client = MerakiResponseFixingClient(base_client)
 
 # ---- Role-Based Route Configurations ----
 
+# Read-only GET routes aligned with Catalyst Center MCP themes (inventory, topology,
+# clients, health metrics, assurance alerts, config templates). No POST/PUT dismiss,
+# client policy changes, or bulk config — keep blast radius small for noc/sysadmin.
+# Order: more specific path patterns before broader ones (same-path-prefix safety).
+_catc_scope_get_routes: list[RouteMap] = [
+    # Device inventory & detail (CATC: get_network_devices / get_device_detail)
+    RouteMap(methods=["GET"], pattern=r"^/devices/[^/]+$", mcp_type=MCPType.TOOL),
+    RouteMap(methods=["GET"], pattern=r"^/networks/[^/]+/devices$", mcp_type=MCPType.TOOL),
+    # Topology & discovery (CATC: get_site_topology)
+    RouteMap(methods=["GET"], pattern=r"^/networks/[^/]+/topology/linkLayer$", mcp_type=MCPType.TOOL),
+    RouteMap(methods=["GET"], pattern=r"^/devices/[^/]+/lldpCdp$", mcp_type=MCPType.TOOL),
+    RouteMap(
+        methods=["GET"],
+        pattern=r"^/organizations/[^/]+/switch/ports/topology/discovery/byDevice$",
+        mcp_type=MCPType.TOOL,
+    ),
+    # Clients (CATC: get_clients)
+    RouteMap(methods=["GET"], pattern=r"^/networks/[^/]+/clients$", mcp_type=MCPType.TOOL),
+    RouteMap(methods=["GET"], pattern=r"^/networks/[^/]+/clients/overview$", mcp_type=MCPType.TOOL),
+    RouteMap(methods=["GET"], pattern=r"^/networks/[^/]+/clients/applicationUsage$", mcp_type=MCPType.TOOL),
+    RouteMap(methods=["GET"], pattern=r"^/networks/[^/]+/clients/bandwidthUsageHistory$", mcp_type=MCPType.TOOL),
+    RouteMap(methods=["GET"], pattern=r"^/networks/[^/]+/clients/usageHistories$", mcp_type=MCPType.TOOL),
+    RouteMap(
+        methods=["GET"],
+        pattern=r"^/networks/[^/]+/clients/(?!(?:overview|applicationUsage|bandwidthUsageHistory|usageHistories|provision)$)[^/]+$",
+        mcp_type=MCPType.TOOL,
+    ),
+    RouteMap(
+        methods=["GET"],
+        pattern=r"^/networks/[^/]+/clients/[^/]+/trafficHistory$",
+        mcp_type=MCPType.TOOL,
+    ),
+    RouteMap(
+        methods=["GET"],
+        pattern=r"^/networks/[^/]+/clients/[^/]+/usageHistory$",
+        mcp_type=MCPType.TOOL,
+    ),
+    RouteMap(
+        methods=["GET"],
+        pattern=r"^/networks/[^/]+/appliance/clients/[^/]+/security/events$",
+        mcp_type=MCPType.TOOL,
+    ),
+    RouteMap(methods=["GET"], pattern=r"^/devices/[^/]+/clients$", mcp_type=MCPType.TOOL),
+    RouteMap(methods=["GET"], pattern=r"^/organizations/[^/]+/clients/overview$", mcp_type=MCPType.TOOL),
+    RouteMap(methods=["GET"], pattern=r"^/organizations/[^/]+/clients/search$", mcp_type=MCPType.TOOL),
+    RouteMap(
+        methods=["GET"],
+        pattern=r"^/organizations/[^/]+/clients/bandwidthUsageHistory$",
+        mcp_type=MCPType.TOOL,
+    ),
+    RouteMap(
+        methods=["GET"],
+        pattern=r"^/networks/[^/]+/wireless/clients/connectionStats$",
+        mcp_type=MCPType.TOOL,
+    ),
+    RouteMap(
+        methods=["GET"],
+        pattern=r"^/networks/[^/]+/wireless/clients/latencyStats$",
+        mcp_type=MCPType.TOOL,
+    ),
+    # Per-client wireless (newer / richer than aggregate-only; OpenAPI v1.69+)
+    RouteMap(
+        methods=["GET"],
+        pattern=r"^/networks/[^/]+/wireless/clients/[^/]+/connectionStats$",
+        mcp_type=MCPType.TOOL,
+    ),
+    RouteMap(
+        methods=["GET"],
+        pattern=r"^/networks/[^/]+/wireless/clients/[^/]+/latencyStats$",
+        mcp_type=MCPType.TOOL,
+    ),
+    RouteMap(
+        methods=["GET"],
+        pattern=r"^/networks/[^/]+/wireless/clients/[^/]+/latencyHistory$",
+        mcp_type=MCPType.TOOL,
+    ),
+    RouteMap(
+        methods=["GET"],
+        pattern=r"^/networks/[^/]+/wireless/clients/[^/]+/connectivityEvents$",
+        mcp_type=MCPType.TOOL,
+    ),
+    RouteMap(
+        methods=["GET"],
+        pattern=r"^/organizations/[^/]+/wireless/clients/overview/byDevice$",
+        mcp_type=MCPType.TOOL,
+    ),
+    RouteMap(
+        methods=["GET"],
+        pattern=r"^/organizations/[^/]+/switch/ports/clients/overview/byDevice$",
+        mcp_type=MCPType.TOOL,
+    ),
+    RouteMap(
+        methods=["GET"],
+        pattern=r"^/organizations/[^/]+/summary/top/clients/byUsage$",
+        mcp_type=MCPType.TOOL,
+    ),
+    RouteMap(
+        methods=["GET"],
+        pattern=r"^/organizations/[^/]+/summary/top/clients/manufacturers/byUsage$",
+        mcp_type=MCPType.TOOL,
+    ),
+    # Health & performance (CATC: get_network_health / get_device_health)
+    RouteMap(
+        methods=["GET"],
+        pattern=r"^/networks/[^/]+/networkHealth/channelUtilization$",
+        mcp_type=MCPType.TOOL,
+    ),
+    RouteMap(methods=["GET"], pattern=r"^/networks/[^/]+/health/alerts$", mcp_type=MCPType.TOOL),
+    RouteMap(
+        methods=["GET"],
+        pattern=r"^/networks/[^/]+/insight/applications/[^/]+/healthByTime$",
+        mcp_type=MCPType.TOOL,
+    ),
+    RouteMap(
+        methods=["GET"],
+        pattern=r"^/organizations/[^/]+/summary/top/networks/byStatus$",
+        mcp_type=MCPType.TOOL,
+    ),
+    RouteMap(methods=["GET"], pattern=r"^/devices/[^/]+/appliance/performance$", mcp_type=MCPType.TOOL),
+    RouteMap(methods=["GET"], pattern=r"^/devices/[^/]+/lossAndLatencyHistory$", mcp_type=MCPType.TOOL),
+    RouteMap(methods=["GET"], pattern=r"^/devices/[^/]+/wireless/status$", mcp_type=MCPType.TOOL),
+    # Assurance alerts (CATC: get_assurance_issues — read only; no dismiss/restore)
+    RouteMap(
+        methods=["GET"],
+        pattern=r"^/organizations/[^/]+/assurance/alerts/overview/byNetwork$",
+        mcp_type=MCPType.TOOL,
+    ),
+    RouteMap(
+        methods=["GET"],
+        pattern=r"^/organizations/[^/]+/assurance/alerts/overview/byType$",
+        mcp_type=MCPType.TOOL,
+    ),
+    RouteMap(
+        methods=["GET"],
+        pattern=r"^/organizations/[^/]+/assurance/alerts/overview/historical$",
+        mcp_type=MCPType.TOOL,
+    ),
+    RouteMap(
+        methods=["GET"],
+        pattern=r"^/organizations/[^/]+/assurance/alerts/overview$",
+        mcp_type=MCPType.TOOL,
+    ),
+    RouteMap(
+        methods=["GET"],
+        pattern=r"^/organizations/[^/]+/assurance/alerts/taxonomy/categories$",
+        mcp_type=MCPType.TOOL,
+    ),
+    RouteMap(
+        methods=["GET"],
+        pattern=r"^/organizations/[^/]+/assurance/alerts/taxonomy/types$",
+        mcp_type=MCPType.TOOL,
+    ),
+    RouteMap(methods=["GET"], pattern=r"^/organizations/[^/]+/assurance/alerts$", mcp_type=MCPType.TOOL),
+    # Single alert: OpenAPI path uses /assurance/alerts/{id} (param name may change across spec revisions)
+    RouteMap(
+        methods=["GET"],
+        pattern=r"^/organizations/[^/]+/assurance/alerts/[^/]+$",
+        mcp_type=MCPType.TOOL,
+    ),
+    RouteMap(methods=["GET"], pattern=r"^/networks/[^/]+/alerts/history$", mcp_type=MCPType.TOOL),
+    RouteMap(
+        methods=["GET"],
+        pattern=r"^/networks/[^/]+/sensor/alerts/current/overview/byMetric$",
+        mcp_type=MCPType.TOOL,
+    ),
+    RouteMap(
+        methods=["GET"],
+        pattern=r"^/networks/[^/]+/sensor/alerts/overview/byMetric$",
+        mcp_type=MCPType.TOOL,
+    ),
+    # Config templates (CATC: get_templates) — list/read only
+    RouteMap(methods=["GET"], pattern=r"^/organizations/[^/]+/configTemplates$", mcp_type=MCPType.TOOL),
+    RouteMap(
+        methods=["GET"],
+        pattern=r"^/organizations/[^/]+/configTemplates/[^/]+$",
+        mcp_type=MCPType.TOOL,
+    ),
+]
+
 # NOC (Network Operations Center) role routes
 # Limited access for monitoring and basic firmware management
 noc_routes = [
@@ -214,6 +393,7 @@ noc_routes = [
     RouteMap(methods=["GET"], pattern=r"^/organizations/[^/]+/devices$", mcp_type=MCPType.TOOL),
     RouteMap(methods=["GET"], pattern=r"^/organizations/[^/]+/firmware/upgrades$", mcp_type=MCPType.TOOL),
     RouteMap(methods=["GET"], pattern=r"^/organizations/[^/]+/licenses/overview$", mcp_type=MCPType.TOOL),
+    *_catc_scope_get_routes,
     RouteMap(methods=["PUT"], pattern=r"^/networks/[^/]+/firmwareUpgrades$", mcp_type=MCPType.TOOL),
     # Deny all other endpoints (including PUT operations)
     RouteMap(pattern=r"^/.*", mcp_type=MCPType.EXCLUDE),
@@ -228,6 +408,7 @@ sysadmin_routes = [
     RouteMap(methods=["GET"], pattern=r"^/organizations/[^/]+/devices$", mcp_type=MCPType.TOOL),
     RouteMap(methods=["GET"], pattern=r"^/organizations/[^/]+/licenses/overview$", mcp_type=MCPType.TOOL),
     RouteMap(methods=["GET"], pattern=r"^/organizations/[^/]+/firmware/upgrades$", mcp_type=MCPType.TOOL),
+    *_catc_scope_get_routes,
     RouteMap(pattern=r"^/.*", mcp_type=MCPType.EXCLUDE),
 ]
 
