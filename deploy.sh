@@ -12,7 +12,7 @@
 # - Prometheus MCP Server: Metrics queries (gnp-stack/netops-stack)
 # - ClickHouse MCP Server: Syslog queries (gnp-stack/netops-stack)
 # - GitLab MCP Server: CI/CD pipeline orchestration
-# - Suite Gateway MCP Server: single endpoint aggregating other MCP servers
+# - NetOps MCP Gateway: single endpoint aggregating other MCP servers
 #
 # Features:
 # - Enable/disable individual servers via .env file (ENABLE_*_MCP)
@@ -20,8 +20,9 @@
 # - Automatic filtering of disabled servers
 #
 # Updated: 2026-02-24 - Added Prometheus, ClickHouse, GitLab servers and netops-stack profile
-
 set -e
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR" || exit 1
 
 # Colors for output
 RED='\033[0;31m'
@@ -42,8 +43,8 @@ if [ -f .env ]; then
     done < .env
     echo -e "${BLUE}✅ Loaded configuration from .env${NC}"
 else
-    echo -e "${YELLOW}⚠️  No .env file found - all servers will be attempted${NC}"
-    echo -e "${YELLOW}   Copy .env.example to .env to configure which servers to enable${NC}"
+    echo -e "${YELLOW}⚠️  No .env file found — set ENABLE_*_MCP=true in .env for each server you want${NC}"
+    echo -e "${YELLOW}   Copy .env.example to .env${NC}"
 fi
 
 # Function to check if a server is enabled
@@ -82,25 +83,28 @@ is_enabled() {
         "gitlab-mcp-server")
             var_name="ENABLE_GITLAB_MCP"
             ;;
-        "suite-gateway-mcp-server")
-            var_name="ENABLE_SUITE_GATEWAY_MCP"
+        "netops-mcp-gateway")
+            var_name="ENABLE_NETOPS_MCP_GATEWAY"
             ;;
     esac
     
-    # If no .env file or variable not set, default to enabled
     if [ -z "$var_name" ]; then
         return 0
     fi
-    
-    # Get the value of the enable variable
     local enabled=$(eval echo \$$var_name)
-    
-    # Check if enabled (true, True, TRUE, 1, yes, Yes, YES)
     if [[ "$enabled" =~ ^(true|True|TRUE|1|yes|Yes|YES)$ ]]; then
         return 0
-    else
-        return 1
     fi
+    return 1
+}
+
+# Compose project file chain (optional local override).
+setup_compose_file() {
+    COMPOSE_FILE="docker-compose.yml"
+    if [ -f docker-compose.override.yml ]; then
+        COMPOSE_FILE="${COMPOSE_FILE}:docker-compose.override.yml"
+    fi
+    export COMPOSE_FILE
 }
 
 # Function to filter enabled services
@@ -131,7 +135,7 @@ show_usage() {
     echo ""
     echo "Usage: $0 [COMMAND] [PROFILE]"
     echo ""
-    echo -e "${YELLOW}Note: Only enabled servers in .env will start (ENABLE_*_MCP=true)${NC}"
+    echo -e "${YELLOW}Note: Only servers with ENABLE_*_MCP=true are started, built, stopped, or logged${NC}"
     echo ""
     echo "Commands:"
     echo "  start     Start servers"
@@ -143,7 +147,7 @@ show_usage() {
     echo "  cleanup   Stop and remove disabled servers"
     echo ""
     echo "Profiles:"
-    echo "  all         All servers (all 11 MCP servers including suite gateway)"
+    echo "  all         All servers (all 11 MCP servers including NetOps MCP Gateway)"
     echo "  meraki      Meraki MCP server only"
     echo "  netbox      NetBox MCP server only"
     echo "  catc        Catalyst Center MCP server only"
@@ -154,7 +158,7 @@ show_usage() {
     echo "  prometheus  Prometheus MCP server only"
     echo "  clickhouse  ClickHouse MCP server only"
     echo "  gitlab      GitLab MCP server only"
-    echo "  suite-gateway  Suite MCP gateway only (aggregates other MCP servers)"
+    echo "  netops-gateway  NetOps MCP Gateway only (aggregates other MCP servers)"
     echo "  cisco       Cisco-focused (Meraki + Catalyst Center + ThousandEyes + ISE + IOS XE)"
     echo "  network     Network management (Meraki + ThousandEyes + IOS XE)"
     echo "  security    Security-focused (Catalyst Center + ISE)"
@@ -170,7 +174,7 @@ show_usage() {
     echo "  $0 start cisco        # Start Cisco-focused servers (if enabled)"
     echo "  $0 start netops-stack # Starts MCP Servers for: ClickHouse, GitLab, IOS-XE, NetBox, Prometheus"
     echo "  $0 cleanup            # Stop and remove disabled servers"
-    echo "  $0 stop all           # Stop all servers"
+    echo "  $0 stop all           # Stop enabled servers for this profile (see stop output)"
     echo "  $0 status all         # Show status of enabled servers"
     echo "  $0 logs gitlab        # Show GitLab server logs"
     echo ""
@@ -187,7 +191,7 @@ build_service_args() {
     local profile=$1
     case $profile in
         "all")
-            echo "meraki-mcp-servers netbox-mcp-server catc-mcp-server thousandeyes-mcp-server ise-mcp-server ios-xe-mcp-server splunk-mcp-server prometheus-mcp-server clickhouse-mcp-server gitlab-mcp-server suite-gateway-mcp-server"
+            echo "meraki-mcp-servers netbox-mcp-server catc-mcp-server thousandeyes-mcp-server ise-mcp-server ios-xe-mcp-server splunk-mcp-server prometheus-mcp-server clickhouse-mcp-server gitlab-mcp-server netops-mcp-gateway"
             ;;
         "meraki")
             echo "meraki-mcp-servers"
@@ -219,8 +223,8 @@ build_service_args() {
         "gitlab"|"gl")
             echo "gitlab-mcp-server"
             ;;
-        "suite-gateway"|"gateway")
-            echo "suite-gateway-mcp-server"
+        "netops-gateway"|"suite-gateway"|"gateway")
+            echo "netops-mcp-gateway"
             ;;
         "cisco")
             echo "meraki-mcp-servers catc-mcp-server thousandeyes-mcp-server ise-mcp-server ios-xe-mcp-server"
@@ -273,9 +277,19 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
+if [[ "$COMMAND" == "help" || "$COMMAND" == "-h" || "$COMMAND" == "--help" ]]; then
+    show_usage
+    exit 0
+fi
+
 # Build service arguments and filter for enabled services
 SERVICE_ARGS_RAW=$(build_service_args $PROFILE)
 SERVICE_ARGS=$(filter_enabled_services "$SERVICE_ARGS_RAW")
+
+setup_compose_file
+if [[ "$COMMAND" == "start" || "$COMMAND" == "build" ]]; then
+    echo -e "${BLUE}ℹ️  COMPOSE_FILE=${COMPOSE_FILE}${NC}" >&2
+fi
 
 # Check if any services are enabled
 if [ -z "$SERVICE_ARGS" ]; then
@@ -299,11 +313,7 @@ case $COMMAND in
             echo -e "${YELLOW}   Environment-only credentials required (.env file)${NC}"
         fi
         
-        if [ "$PROFILE" = "all" ]; then
-            docker-compose up -d
-        else
-            docker-compose up -d $SERVICE_ARGS
-        fi
+        docker-compose up -d $SERVICE_ARGS
         echo -e "${GREEN}✅ Servers started successfully!${NC}"
         echo -e "${YELLOW}Use '$0 status $PROFILE' to check status${NC}"
         
@@ -314,12 +324,9 @@ case $COMMAND in
         ;;
     "stop")
         echo -e "${YELLOW}Stopping MCP servers with profile: $PROFILE${NC}"
-        if [ "$PROFILE" = "all" ]; then
-            docker-compose down
-        else
-            docker-compose stop $SERVICE_ARGS
-        fi
+        docker-compose stop $SERVICE_ARGS
         echo -e "${GREEN}Servers stopped successfully!${NC}"
+        echo -e "${BLUE}   Stopped only services enabled in .env for this profile. Full teardown: docker compose down${NC}"
         ;;
     "restart")
         echo -e "${YELLOW}Restarting MCP servers with profile: $PROFILE${NC}"
@@ -331,36 +338,26 @@ case $COMMAND in
         docker-compose ps $SERVICE_ARGS
         ;;
     "logs")
-        echo -e "${BLUE}Logs for profile: $PROFILE${NC}"
-        if [ "$PROFILE" = "all" ]; then
-            docker-compose logs -f
-        else
-            docker-compose logs -f $SERVICE_ARGS
-        fi
+        echo -e "${BLUE}Logs for profile: $PROFILE (enabled services only)${NC}"
+        docker-compose logs -f $SERVICE_ARGS
         ;;
     "build")
         echo -e "${YELLOW}Building images for profile: $PROFILE${NC}"
-        if [ "$PROFILE" = "all" ]; then
-            docker-compose build
-        else
-            docker-compose build $SERVICE_ARGS
-        fi
+        docker-compose build $SERVICE_ARGS
         echo -e "${GREEN}Images built successfully!${NC}"
         ;;
     "cleanup")
         echo -e "${YELLOW}🧹 Cleaning up disabled servers...${NC}"
         
-        # Get all possible servers
-        ALL_SERVERS="meraki-mcp-servers netbox-mcp-server catc-mcp-server thousandeyes-mcp-server ise-mcp-server ios-xe-mcp-server splunk-mcp-server prometheus-mcp-server clickhouse-mcp-server gitlab-mcp-server"
+        ALL_SERVERS="meraki-mcp-servers netbox-mcp-server catc-mcp-server thousandeyes-mcp-server ise-mcp-server ios-xe-mcp-server splunk-mcp-server prometheus-mcp-server clickhouse-mcp-server gitlab-mcp-server netops-mcp-gateway"
         
         STOPPED_COUNT=0
         for service in $ALL_SERVERS; do
             if ! is_enabled $service; then
-                # Check if container exists and is running
-                if docker ps -a --format '{{.Names}}' | grep -q "^${service}$"; then
+                if docker-compose ps -aq "$service" 2>/dev/null | grep -q .; then
                     echo -e "${BLUE}  Stopping and removing: $service${NC}"
-                    docker stop $service 2>/dev/null || true
-                    docker rm $service 2>/dev/null || true
+                    docker-compose stop "$service" 2>/dev/null || true
+                    docker-compose rm -f "$service" 2>/dev/null || true
                     STOPPED_COUNT=$((STOPPED_COUNT + 1))
                 fi
             fi
@@ -371,9 +368,6 @@ case $COMMAND in
         else
             echo -e "${GREEN}✅ Stopped and removed $STOPPED_COUNT disabled server(s)${NC}"
         fi
-        ;;
-    "help"|"-h"|"--help")
-        show_usage
         ;;
     *)
         echo -e "${RED}Error: Unknown command '$COMMAND'${NC}"

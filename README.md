@@ -17,7 +17,7 @@ AI-Powered Network Troubleshooting with LibreChat using Multiple MCP Servers
 
 ## 📋 Description
 
-This **AIOps-focused** Docker suite contains eleven MCP servers (ten platform servers plus an optional **suite gateway**) enabling AI-driven network operations:
+This **AIOps-focused** Docker suite contains eleven MCP servers (ten platform servers plus an optional **NetOps MCP Gateway**) enabling AI-driven network operations:
 
 - **Meraki MCP Server** (8000): Cloud network management through Meraki Dashboard API - [📖 Details](meraki-mcp-server/README.md)
 - **NetBox MCP Server** (8001): DCIM/IPAM infrastructure documentation and management - [📖 Details](netbox-mcp-server/README.md)
@@ -29,7 +29,7 @@ This **AIOps-focused** Docker suite contains eleven MCP servers (ten platform se
 - **Prometheus MCP Server** (8007): Metrics queries for network monitoring ([netops-stack](https://github.com/pamosima/netops-stack)) - [📖 Details](prometheus-mcp-server/README.md)
 - **ClickHouse MCP Server** (8008): Syslog and log queries for troubleshooting ([netops-stack](https://github.com/pamosima/netops-stack)) - [📖 Details](clickhouse-mcp-server/README.md)
 - **GitLab MCP Server** (8009): CI/CD pipeline triggering and repository management for network automation - [📖 Details](gitlab-mcp-server/README.md)
-- **Suite MCP Gateway** (8012→8010, optional): One MCP URL that discovers and proxies tools from the other suite servers — ideal for LibreChat with a single `mcpServers` entry - [📖 Details](suite-gateway-mcp-server/README.md)
+- **NetOps MCP Gateway** (8010, optional): One MCP URL that discovers and proxies tools from the other suite servers — ideal for LibreChat with a single `mcpServers` entry - [📖 Details](netops-mcp-gateway/README.md)
 
 All servers are containerized with flexible deployment profiles, enabling **AIOps workflows** through natural language queries, automated troubleshooting, and intelligent network analytics via AI assistants.
 
@@ -141,7 +141,7 @@ The suite provides direct access to seven containerized MCP servers, perfect for
 │                 │────┼─▶│ ClickHouse MCP    :8008     │ │
 │                 │    │  ├─────────────────────────────┤ │
 │                 │────┼─▶│ GitLab MCP        :8009     │ │
-│                 │────┼─▶│ Suite MCP Gateway :8012     │ │
+│                 │────┼─▶│ NetOps MCP Gateway :8010    │ │
 │                 │    │  └─────────────────────────────┘ │
 └─────────────────┘    └──────────────────────────────────┘
         
@@ -225,7 +225,7 @@ ENABLE_SPLUNK_MCP=false      # Disabled - won't start
 ENABLE_PROMETHEUS_MCP=true   # netops-stack metrics
 ENABLE_CLICKHOUSE_MCP=true   # netops-stack syslog
 ENABLE_GITLAB_MCP=true       # CI/CD orchestration
-ENABLE_SUITE_GATEWAY_MCP=false  # Single MCP URL aggregating other servers (host 8012)
+ENABLE_NETOPS_MCP_GATEWAY=false  # Single MCP URL aggregating other servers (host 8010)
 ```
 
 **Best Practices:**
@@ -238,7 +238,7 @@ ENABLE_SUITE_GATEWAY_MCP=false  # Single MCP URL aggregating other servers (host
 
 | Profile | Description | Servers Deployed | Use Case |
 |---------|-------------|------------------|----------|
-| `all` | Deploy all enabled servers | All suite servers including optional gateway (8000-8012) | Complete infrastructure visibility |
+| `all` | Deploy all enabled servers | All suite servers including optional gateway (8000-8010) | Complete infrastructure visibility |
 | `cisco` | Cisco-focused platforms | Meraki + Catalyst Center + ThousandEyes + ISE + IOS XE | Cisco-centric environments |
 | `monitoring` | Network monitoring | Meraki + Catalyst Center + ThousandEyes + Splunk | Operations teams |
 | `observability` | netops-stack metrics/logs | Prometheus + ClickHouse + NetBox | AI-driven troubleshooting |
@@ -270,20 +270,15 @@ ENABLE_SUITE_GATEWAY_MCP=false  # Single MCP URL aggregating other servers (host
 
 ### External Network Integration (for LibreChat)
 
-To integrate with LibreChat or other services on an external Docker network:
+All MCP services attach to the external **`mcp-server`** bridge (see `docker-compose.yml`). LibreChat and other tools on that network can use per-server URLs (for example `http://ise-mcp-server:8005/mcp`) or the NetOps MCP Gateway when enabled (`http://netops-mcp-gateway:8010/mcp`).
 
 ```bash
-# 1. Create the external network
-docker network create mcp-server
-
-# 2. Copy and use the override configuration
-cp docker-compose.override.yml.example docker-compose.override.yml
-
-# 3. Deploy (automatically uses override file)
-./deploy.sh start all
+docker network create mcp-server   # once, before first up
+# Optional: cp docker-compose.override.yml.example docker-compose.override.yml
+docker compose up -d    # or: ./deploy.sh start all
 ```
 
-The `docker-compose.override.yml` configures all MCP servers to join the external `mcp-server` network, allowing seamless communication with LibreChat and other services on the same network.
+**`./deploy.sh`** still filters which services start from **`ENABLE_*_MCP`** in `.env` and merges optional **`docker-compose.override.yml`**.
 
 ## 💻 Usage
 
@@ -335,7 +330,7 @@ The AI assistant automatically uses both MCP servers working together:
 | Prometheus | 8007 | `http://localhost:8007/mcp` | Metrics queries (netops-stack) |
 | ClickHouse | 8008 | `http://localhost:8008/mcp` | Syslog queries (netops-stack) |
 | GitLab | 8009 | `http://localhost:8009/mcp` | CI/CD & repository management |
-| Suite gateway | 8012 | `http://localhost:8012/mcp` | Aggregated tools from enabled backends |
+| NetOps MCP Gateway | 8010 | `http://localhost:8010/mcp` | Aggregated tools from enabled backends |
 
 ## 🌐 MCP Client Integration
 

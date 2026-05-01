@@ -1,5 +1,11 @@
+# External `mcp-server` network (LibreChat and peers). Create once: docker network create mcp-server
+x-mcp-on-mcp-server: &mcp-on-mcp-server
+  networks:
+    - mcp-server
+
 services:
   meraki-mcp-servers:
+    <<: *mcp-on-mcp-server
     build:
       context: ./meraki-mcp-server
       dockerfile: Dockerfile
@@ -45,6 +51,7 @@ services:
         max-file: "3"
 
   netbox-mcp-server:
+    <<: *mcp-on-mcp-server
     build:
       context: ./netbox-mcp-server
       dockerfile: Dockerfile
@@ -85,6 +92,7 @@ services:
         max-file: "3"
 
   catc-mcp-server:
+    <<: *mcp-on-mcp-server
     build:
       context: ./catc-mcp-server
       dockerfile: Dockerfile
@@ -125,6 +133,7 @@ services:
         max-file: "3"
 
   ios-xe-mcp-server:
+    <<: *mcp-on-mcp-server
     build:
       context: ./ios-xe-mcp-server
       dockerfile: Dockerfile
@@ -166,6 +175,7 @@ services:
         max-file: "3"
 
   thousandeyes-mcp-server:
+    <<: *mcp-on-mcp-server
     build:
       context: ./thousandeyes-mcp-server
       dockerfile: Dockerfile
@@ -206,6 +216,7 @@ services:
         max-file: "3"
 
   ise-mcp-server:
+    <<: *mcp-on-mcp-server
     build:
       context: ./ise-mcp-server
       dockerfile: Dockerfile
@@ -246,6 +257,7 @@ services:
         max-file: "3"
 
   splunk-mcp-server:
+    <<: *mcp-on-mcp-server
     build:
       context: ./splunk-mcp-server
       dockerfile: Dockerfile
@@ -291,6 +303,7 @@ services:
         max-file: "3"
 
   prometheus-mcp-server:
+    <<: *mcp-on-mcp-server
     build:
       context: ./prometheus-mcp-server
       dockerfile: Dockerfile
@@ -332,6 +345,7 @@ services:
         max-file: "3"
 
   clickhouse-mcp-server:
+    <<: *mcp-on-mcp-server
     build:
       context: ./clickhouse-mcp-server
       dockerfile: Dockerfile
@@ -373,6 +387,7 @@ services:
         max-file: "3"
 
   gitlab-mcp-server:
+    <<: *mcp-on-mcp-server
     build:
       context: ./gitlab-mcp-server
       dockerfile: Dockerfile
@@ -413,11 +428,12 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  suite-gateway-mcp-server:
+  netops-mcp-gateway:
+    <<: *mcp-on-mcp-server
     build:
-      context: ./suite-gateway-mcp-server
+      context: ./netops-mcp-gateway
       dockerfile: Dockerfile
-    container_name: suite-gateway-mcp-server
+    container_name: netops-mcp-gateway
     restart: unless-stopped
 
     env_file:
@@ -428,7 +444,7 @@ services:
       - MCP_PORT=8010
 
     ports:
-      - "8012:8010"
+      - "8010:8010"
 
     security_opt:
       - no-new-privileges:true
@@ -447,3 +463,7 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+networks:
+  mcp-server:
+    external: true

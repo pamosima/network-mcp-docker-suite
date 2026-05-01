@@ -1,7 +1,7 @@
 [project]
-name = "suite-gateway-mcp-server"
+name = "netops-mcp-gateway"
 version = "0.1.0"
-description = "Single MCP gateway that aggregates tools from other suite MCP servers (streamable-http)"
+description = "NetOps MCP Gateway — single MCP server that aggregates tools from other suite MCP servers (streamable-http)"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

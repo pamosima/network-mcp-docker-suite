@@ -1,21 +1,4 @@
-services:
-  meraki-mcp-servers:
-    networks: ['mcp-server']
-  netbox-mcp-server:
-    networks: ['mcp-server']
-  catc-mcp-server:
-    networks: ['mcp-server']
-  ios-xe-mcp-server:
-    networks: ['mcp-server']
-  thousandeyes-mcp-server:
-    networks: ['mcp-server']
-  ise-mcp-server:
-    networks: ['mcp-server']
-  splunk-mcp-server:
-    networks: ['mcp-server']
-  suite-gateway-mcp-server:
-    networks: ['mcp-server']
+# Optional: copy to docker-compose.override.yml for extra `services:` customizations (volumes, env).
+# All MCP services attach to the external `mcp-server` network from docker-compose.yml (no extra fragments).
 
-networks:
-  mcp-server:
-    external: true
+services: {}
