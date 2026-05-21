@@ -20,6 +20,10 @@ You are connected to the NetOps MCP Gateway: one MCP server that aggregates tool
 - `netops://flows/backends` — default Docker aliases and ports
 - `netops://flows/clients` — LibreChat / Cursor wiring
 
+**Hybrid Meraki + Catalyst Center:** when both backends are enabled, use **NetBox first** (`netbox`) to decide **management scope** per site/device (tags, custom fields, platform, role—however the customer models it). Then query **Meraki** vs **Catalyst Center** accordingly; do not assume every device is in both.
+
+**Broad health / “current issues”:** call `suite_list_backends` first, then sample **each** returned backend (not only campus or SIEM). **Meraki** alert and health tools usually need `organizationId` / `networkId` from that backend’s **list organizations** / **list networks** tools first—never skip Meraki after a failed call; fix arguments and retry. If `suite_search_tools` returns zero matches, read the response `hint` and widen keywords or set `backend`.
+
 Treat every tool as high-privilege network/infrastructure access: confirm intent for destructive or wide-impact actions; prefer read-only tools first; respect least privilege and change windows.
 """
 
@@ -43,9 +47,10 @@ Backends that are unreachable are skipped; the gateway still starts.
 
 ## Principles
 
-1. Pick the backend that owns the data (Meraki for cloud dashboard objects, ISE for session/policy, Splunk for indexed logs, Prometheus for metrics, etc.).
-2. **Search** before **call** (`suite_search_tools` then `suite_call_tool`) so arguments match the real `inputSchema`.
-3. Chain reads before writes; for changes, summarize impact and get explicit confirmation when the user did not ask for a mutation.
+1. **NetBox first when present** — For estates that run **both Meraki and Catalyst Center**, use NetBox (or the customer’s SoT) to determine **whether the scope is Meraki-managed, campus/CatC-managed, or hybrid** before spending quota on the wrong controller.
+2. Pick the backend that owns the data (Meraki for cloud dashboard objects, Catalyst Center for on-prem inventory/assurance, ISE for session/policy, Splunk for indexed logs, Prometheus for metrics, etc.).
+3. **Search** before **call** (`suite_search_tools` then `suite_call_tool`) so arguments match the real `inputSchema`.
+4. Chain reads before writes; for changes, summarize impact and get explicit confirmation when the user did not ask for a mutation.
 """
 
 
@@ -59,40 +64,79 @@ Use this as a **default order** when the user’s problem spans vendors or layer
 - Clarify: user/site/network/device/application, time window, and whether the issue is **reachability**, **performance**, **auth**, or **policy**.
 - Use `suite_search_tools` with `query` keywords (`ping`, `route`, `session`, `log`, `metric`, etc.) and `detail_level` at least `summary` before calling tools.
 
-## 2. Path / overlay (common first checks)
+## 2. Broad “current issues” or health sweeps
 
-- **Meraki** (`meraki`): org/network/device status, uplinks, VPN, wireless health as exposed by available tools.
-- **ThousandEyes** (`thousandeyes`): cloud or agent tests toward the affected dependency, if configured.
+- Call **`suite_list_backends`** first; only query backends that appear there (others are down or disabled).
+- For **open-ended** questions (“current network issues”, “anything wrong”, “health check”), plan coverage across **every listed backend** that matters for the estate—but **respect §3**: if NetBox + Meraki + CatC are all present, use NetBox (or site metadata) to **prioritize** Meraki vs Catalyst Center per site so you do not duplicate contradictory narratives.
+- **Meraki**: resolve `organizationId` / `networkId` before alert-heavy calls; fix schema errors and retry—do not omit Meraki from the summary when scope includes it.
 
-## 3. Campus / WAN device state
+## 3. NetBox first — source of truth and **management scope** (Meraki vs Catalyst Center)
 
-- **Catalyst Center** (`catc`): inventory, topology, assurance or health APIs surfaced by the server.
-- **IOS XE** (`ios_xe`): live CLI-style diagnostics on specific devices (respect read vs write tools).
+When **`netbox`** is in `suite_list_backends`, treat it as the **first hop** for **where to troubleshoot**, not only for IPAM text.
 
-## 4. Identity and access
+### Why
+
+Customers often run **Meraki and Catalyst Center together** (cloud + campus). The same ticket may mention a site or hostname that exists in only one control plane. NetBox (or equivalent SoT) should record **which management domain** applies.
+
+### What to pull from NetBox
+
+Use whatever tools the NetBox MCP exposes (`suite_search_tools` with `backend`=`netbox`, query e.g. `device`, `site`, `search`). Typical goals:
+
+- Resolve **hostname → device** (or IP → interface/device).
+- Read **site** / **location** / **tenant**.
+- Infer **management scope** from customer conventions, for example:
+  - **Custom fields** (e.g. `controller`, `meraki_network_id`, `dnac_site_id`).
+  - **Tags** (e.g. `meraki`, `catc`, `campus`, `branch`).
+  - **Platform / device type** (MR/MX/MS vs Catalyst IOS-XE).
+  - **Role** (access switch vs SD-WAN appliance).
+
+### How to branch
+
+| Scope from SoT | Primary backends next |
+|----------------|----------------------|
+| **Meraki-managed** (or tag/platform says cloud dashboard) | `meraki` — org/network/device health, alerts, uplinks, VPN, wireless as tools allow. |
+| **Catalyst Center–managed** (or on-prem campus) | `catc` — inventory, topology, assurance/health; then `ios_xe` for device-local checks if needed. |
+| **Hybrid site** (e.g. Meraki SD-WAN + CatC switching) | Use **both**; state explicitly which finding came from **Meraki** vs **CatC** so the user is not confused. |
+| **Unknown / NetBox silent** | Ask the user or use **both** Meraki and CatC **narrowly** (search by site name) if both backends are listed—avoid assuming full overlap. |
+
+### Meraki IDs
+
+After scope says Meraki, many tools need **`organizationId`** / **`networkId`**. Use Meraki **list organizations** / **list networks** (discover exact tool names via `suite_search_tools`) and map from NetBox custom fields or naming if the customer maintains that link.
+
+## 4. Path / overlay (after scope is clear)
+
+- **ThousandEyes** (`thousandeyes`): cloud or agent tests toward the affected dependency, if configured — useful for **both** Meraki and campus paths.
+
+## 5. In-scope controller checks (if not already done in §3)
+
+- **Meraki** (`meraki`): when scope includes Meraki — status, alerts, uplinks, VPN, wireless per available tools.
+- **Catalyst Center** (`catc`): when scope includes campus — inventory, topology, assurance/health per available tools.
+- **IOS XE** (`ios_xe`): live CLI-style diagnostics on **specific** devices (respect read vs write tools); often pairs with CatC scope.
+
+## 6. Identity and access
 
 - **ISE** (`ise`): session, authorization, profiling — when failure looks like **802.1X**, **TACACS**, or **policy** mismatch.
 
-## 5. Observability
+## 7. Observability
 
 - **Splunk** (`splunk`): correlate timestamps across systems; start narrow (index/sourcetype/host) then widen.
 - **Prometheus** (`prometheus`): golden signals, scrape/up, alert labels — for **metric**-driven incidents.
 
-## 6. Source of truth for design data
+## 8. Design vs reality (NetBox again if needed)
 
-- **NetBox** (`netbox`): prefixes, VLANs, circuits, IPs — when documentation vs reality is in question.
+- **NetBox** (`netbox`): prefixes, VLANs, circuits, IPs — when documentation vs reality is in question **after** you have live signals from Meraki/CatC/Splunk/Prometheus.
 
-## 7. Change correlation
+## 9. Change correlation
 
 - **GitLab** (`gitlab`): MRs, pipelines, release timing — when the incident follows a deploy or automation change.
 
-## 8. Analytics / telemetry warehouse (if in use)
+## 10. Analytics / telemetry warehouse (if in use)
 
 - **ClickHouse** (`clickhouse`): high-volume or long-range analytics per tools available on that server.
 
 ## Closure
 
-Summarize evidence with **which backend** each fact came from. If data was missing, say what tool or scope would be needed next.
+Summarize evidence with **which backend** each fact came from and, for hybrid estates, **which management scope** (Meraki vs Catalyst Center) each device/site used. If data was missing, say what tool or NetBox field would be needed next.
 """
 
 

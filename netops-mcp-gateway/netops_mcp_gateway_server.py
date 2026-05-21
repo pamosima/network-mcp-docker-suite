@@ -408,12 +408,30 @@ async def gateway_lifespan(server) -> object:
                 if lvl == "full" or include_input_schema:
                     item["inputSchema"] = row.get("inputSchema")
                 hits.append(item)
-            return {
+            out: dict[str, Any] = {
                 "detail_level": lvl,
                 "matches": hits[:lim],
                 "returned": min(len(hits), lim),
                 "scanned": len(_compact_registry.catalog),
             }
+            if not hits and _compact_registry.catalog:
+                if want and not any(r["backend"] == want for r in _compact_registry.catalog):
+                    out["hint"] = (
+                        f"No catalog entries for backend `{want}`. "
+                        f"Known backends: {sorted({r['backend'] for r in _compact_registry.catalog})}."
+                    )
+                elif q:
+                    out["hint"] = (
+                        "No tool name or description contained that substring. Try shorter tokens "
+                        "(e.g. alert, issue, assurance, health, org, network, site, log, session), "
+                        "set `backend` to one vendor, or use `query=\"\"` with a higher `limit` to browse. "
+                        "Meraki alert-style tools often need organizationId from a list-organizations tool first."
+                    )
+                else:
+                    out["hint"] = (
+                        "No matches with current filters. Raise `limit` or add a `query` / `backend` filter."
+                    )
+            return out
 
         async def suite_call_tool(
             backend: str,
