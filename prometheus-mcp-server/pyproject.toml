@@ -7,5 +7,5 @@ requires-python = ">=3.10"
 dependencies = [
     "fastmcp>=3.2.4",
     "httpx>=0.28.1",
-    "uvicorn>=0.45.0",
+    "uvicorn>=0.47.0",
 ]
