@@ -24,6 +24,7 @@ Based on: https://github.com/CiscoDevNet/thousandeyes-mcp-community
 """
 
 import os
+import sys
 from pathlib import Path
 from typing import Any, Dict, Optional
 import requests
@@ -371,7 +372,7 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"❌ Failed to connect to ThousandEyes API: {e}")
         print("💡 Please check your TE_TOKEN and network connectivity")
-        exit(1)
+        sys.exit(1)
     
     # Start the MCP server
     mcp.run(transport="http", host=mcp_host, port=mcp_port)

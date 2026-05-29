@@ -24,6 +24,7 @@ Author: Patrick Mosimann
 
 import abc
 import os
+import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 import requests
@@ -72,13 +73,13 @@ if not netbox_url:
     print("❌ NETBOX_URL not configured!")
     print("📋 Please set your NetBox URL in .env file")
     print("   Example: NETBOX_URL=https://netbox.example.com")
-    exit(1)
+    sys.exit(1)
 
 if not netbox_token:
     print("❌ NETBOX_TOKEN not configured!")
     print("📋 Please set your NetBox API token in .env file")
     print("   Example: NETBOX_TOKEN=your_token_here")
-    exit(1)
+    sys.exit(1)
 
 print(f"✅ NetBox URL: {netbox_url}")
 print(f"✅ NetBox token configured")
