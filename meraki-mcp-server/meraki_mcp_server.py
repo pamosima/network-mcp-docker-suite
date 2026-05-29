@@ -26,6 +26,7 @@ Author: Patrick Mosimann
 
 import httpx
 import os
+import sys
 import json
 import logging
 import jsonschema
@@ -85,7 +86,7 @@ if not api_key or api_key.startswith('your_actual_'):
     print("❌ MERAKI_KEY not configured properly!")
     print("📋 Please set your Meraki API key in .env file")
     print("   Example: MERAKI_KEY=your_actual_api_key_here")
-    exit(1)
+    sys.exit(1)
 
 print(f"✅ Meraki API key loaded: [CONFIGURED]")
 print(f"🌐 MCP Server will run on: http://{mcp_host}:{mcp_port}")

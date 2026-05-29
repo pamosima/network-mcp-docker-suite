@@ -51,6 +51,7 @@ Based on: https://github.com/automateyournetwork/ISE_MCP
 
 import os
 import re
+import sys
 import requests
 import urllib3
 from pathlib import Path
@@ -756,6 +757,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"❌ Failed to connect to ISE API: {e}")
         print("💡 Please check your ISE credentials, host connectivity, and ERS API status")
-        exit(1)
+        sys.exit(1)
 
     mcp.run(transport="http", host=mcp_host, port=mcp_port)

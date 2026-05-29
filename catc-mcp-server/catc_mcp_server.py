@@ -25,6 +25,7 @@ Author: Patrick Mosimann
 """
 
 import os
+import sys
 import base64
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -477,7 +478,7 @@ if __name__ == "__main__":
         print("✅ Successfully authenticated with Catalyst Center")
     else:
         print("❌ Failed to authenticate with Catalyst Center")
-        exit(1)
+        sys.exit(1)
     
     # Start the MCP server
     mcp.run(transport="http", host=mcp_host, port=mcp_port)
