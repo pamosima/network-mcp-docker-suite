@@ -5,7 +5,7 @@ description = "ClickHouse MCP server for syslog and log queries"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "fastmcp>=3.3.1",
+    "fastmcp>=3.4.0",
     "httpx>=0.28.1",
     "uvicorn>=0.48.0",
 ]
