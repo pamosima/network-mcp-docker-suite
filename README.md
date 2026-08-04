@@ -1,6 +1,6 @@
-[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/pamosima-network-mcp-docker-suite-badge.png)](https://mseep.ai/app/pamosima-network-mcp-docker-suite)
-
 # 🌐 Network MCP Docker Suite
+
+[![Verified on MseeP](https://mseep.ai/badge.svg)](https://mseep.ai/app/e0e20146-a2ba-4c7f-adc2-201fee541287)
 
 [![published](https://static.production.devnetcloud.com/codeexchange/assets/images/devnet-published.svg)](https://developer.cisco.com/codeexchange/github/repo/pamosima/network-mcp-docker-suite)
 
