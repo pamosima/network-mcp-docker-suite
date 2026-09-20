@@ -9,4 +9,8 @@ dependencies = [
     "netmiko>=4.3.0",
     "uvicorn>=0.35.0",
     "python-dotenv>=1.0.0",
+    "anyio>=4.14.2",
+    "cryptography>=50.0.0",
+    "mcp>=1.28.1",
+    "pydantic-settings>=2.14.2",
 ]

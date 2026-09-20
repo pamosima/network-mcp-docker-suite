@@ -8,4 +8,7 @@ dependencies = [
     "fastmcp>=3.4.5",
     "httpx>=0.28.1",
     "uvicorn>=0.52.4",
+    "anyio>=4.14.2",
+    "cryptography>=50.0.0",
+    "mcp>=1.28.1",
 ]

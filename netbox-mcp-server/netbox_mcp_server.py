@@ -23,7 +23,9 @@ Author: Patrick Mosimann
 """
 
 import abc
+import keyword
 import os
+import re
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -554,7 +556,13 @@ def register_custom_scripts_as_tools():
             # Convert script name to valid Python function name
             # "CreateSiteAndLocations" → "create_site_and_locations"
             tool_name = _to_snake_case(script_name)
-            
+            validation_error = _validate_script_for_dynamic_tool(
+                script_name, tool_name, script_vars
+            )
+            if validation_error:
+                print(f"   ⚠️  Skipped script '{script_name}': {validation_error}")
+                continue
+
             # Create the dynamic tool function
             dynamic_tool = _create_script_tool(
                 script_id=script_id,
@@ -581,12 +589,39 @@ def register_custom_scripts_as_tools():
 
 def _to_snake_case(name: str) -> str:
     """Convert CamelCase or PascalCase to snake_case."""
-    import re
     # Insert underscore before uppercase letters
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
     # Insert underscore before uppercase letters that follow lowercase
     s2 = re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1)
     return s2.lower()
+
+
+_SAFE_IDENTIFIER = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
+_ALLOWED_SCRIPT_VAR_TYPES = frozenset({
+    "ObjectVar", "StringVar", "IntegerVar", "BooleanVar",
+})
+
+
+def _is_valid_python_identifier(name: str) -> bool:
+    return bool(_SAFE_IDENTIFIER.match(name)) and not keyword.iskeyword(name)
+
+
+def _validate_script_for_dynamic_tool(
+    script_name: str,
+    tool_name: str,
+    variables: Dict[str, str],
+) -> Optional[str]:
+    """Return an error message when script metadata is unsafe for exec()-based tool generation."""
+    if not _is_valid_python_identifier(tool_name):
+        return f"tool name '{tool_name}' is not a safe Python identifier"
+    for var_name, var_type in variables.items():
+        if not _is_valid_python_identifier(var_name):
+            return f"variable name '{var_name}' is not a safe Python identifier"
+        if var_type not in _ALLOWED_SCRIPT_VAR_TYPES:
+            return f"unsupported variable type '{var_type}' for '{var_name}'"
+    if any(ch in script_name for ch in ('"""', "\\")):
+        return "script name contains characters unsafe for code generation"
+    return None
 
 
 def _create_script_tool(script_id: int, script_name: str, tool_name: str, 
@@ -657,7 +692,8 @@ Example:
     # Create parameter names for kwargs dict
     param_names = list(variables.keys())
     param_dict_items = ", ".join([f'"{name}": {name}' for name in param_names])
-    
+    script_name_literal = repr(script_name)
+
     # Generate the function code dynamically
     func_code = f'''
 def {tool_name}({param_signature}) -> Dict[str, Any]:
@@ -693,18 +729,18 @@ def {tool_name}({param_signature}) -> Dict[str, Any]:
         return {{
             "success": True,
             "script_id": {script_id},
-            "script_name": "{script_name}",
+            "script_name": {script_name_literal},
             "job_id": job_id,
             "job_info": job_info,
             "result": result,
-            "message": f"Script '{script_name}' executed successfully. Use get_script_job_status('{{job_id}}') to check status."
+            "message": f"Script {{{script_name_literal}}} executed successfully. Use get_script_job_status('{{job_id}}') to check status."
         }}
     except Exception as e:
         return {{
             "success": False,
             "error": str(e),
             "script_id": {script_id},
-            "script_name": "{script_name}"
+            "script_name": {script_name_literal}
         }}
 '''
     

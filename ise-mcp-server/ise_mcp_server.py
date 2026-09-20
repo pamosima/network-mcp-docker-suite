@@ -59,9 +59,6 @@ from typing import Any, Dict, Optional
 from urllib.parse import quote
 from fastmcp import FastMCP
 
-# Disable SSL warnings if verify is False
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
 # MnT Monitoring API paths — see monitoring-open-api.yaml (server: https://{server}/admin/API/mnt)
 MNT_PATH_SESSION_ACTIVE_LIST = "Session/ActiveList"
 
@@ -104,6 +101,8 @@ ISE_USERNAME = os.getenv("ISE_USERNAME")
 ISE_PASSWORD = os.getenv("ISE_PASSWORD")
 ISE_VERSION = os.getenv("ISE_VERSION", "1.0")
 ISE_VERIFY_SSL = os.getenv("ISE_VERIFY_SSL", "True").lower() == "true"
+if not ISE_VERIFY_SSL:
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 try:
     ISE_REQUEST_TIMEOUT = float(os.getenv("ISE_REQUEST_TIMEOUT", "30"))
 except ValueError:
