@@ -11,6 +11,6 @@ dependencies = [
     "anyio>=4.15.1",
     "cryptography>=50.0.1",
     "mcp>=1.28.1",
-    "pyjwt>=2.15.0",
+    "pyjwt>=2.15.1",
     "urllib3>=2.8.0",
 ]
