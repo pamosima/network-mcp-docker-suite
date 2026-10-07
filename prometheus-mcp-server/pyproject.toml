@@ -10,7 +10,7 @@ dependencies = [
     "uvicorn>=0.54.0",
     "anyio>=4.15.1",
     "cryptography>=50.0.1",
-    "mcp>=1.28.1",
+    "mcp>=2.3.0",
     "pyjwt>=2.15.0",
     "urllib3>=2.8.0",
 ]
