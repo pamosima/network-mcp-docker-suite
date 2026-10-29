@@ -28,7 +28,7 @@ A [FastMCP](https://gofastmcp.com) server that sits in front of Splunk’s **nat
 | `SPLUNK_MCP_URL` | **Optional** full base URL to the Splunk MCP endpoint; overrides host/port/path. |
 | `SPLUNK_API_KEY` | **Required.** Splunk bearer token. |
 | `SPLUNK_VERIFY_SSL` | `true` / `false` (default: verify off for dev/self-signed). |
-| `MCP_HOST` | Bind address for this server (default `0.0.0.0`). |
+| `MCP_HOST` | Bind address for this server (default `127.0.0.1`). Non-loopback requires `MCP_API_TOKEN`. |
 | `MCP_PORT` | Port for this server (default `8006`). |
 | `DOTENV_PATH` | Path to a dotenv file (default `.env` under the working directory). |
 | `SPLUNK_MCP_DYNAMIC` | If `true` (default), load tools from Splunk at startup. |

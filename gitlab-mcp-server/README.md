@@ -33,13 +33,17 @@ The primary use case is **AI-driven network configuration management**:
 | `GITLAB_ALLOWED_FILE_PATHS` | Comma-separated allowed file path prefixes | See below |
 | `GITLAB_RATE_LIMIT_TRIGGER` | Max pipeline triggers per minute | `10` |
 | `GITLAB_RATE_LIMIT_FILE_UPDATE` | Max file updates per minute | `30` |
-| `MCP_HOST` | Server bind address | `0.0.0.0` |
+| `GITLAB_ENABLE_WRITES` | Register trigger/play/file-update tools | `false` |
+| `MCP_HOST` | Server bind address | `127.0.0.1` |
 | `MCP_PORT` | Server port | `8009` |
+| `MCP_API_TOKEN` | Bearer token; required when bind is not loopback | (empty) |
 
 ### Required GitLab Token Scopes
 
 - `api` (full API access) - OR -
 - `read_api` + `write_repository` (minimum for trigger and file updates)
+
+Write tools (`trigger_gitlab_pipeline`, `play_gitlab_job`, `update_gitlab_repository_file`) are registered only when `GITLAB_ENABLE_WRITES=true`.
 
 ## Tools
 

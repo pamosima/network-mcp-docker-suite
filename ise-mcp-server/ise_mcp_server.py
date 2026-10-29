@@ -58,6 +58,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 from urllib.parse import quote
 from fastmcp import FastMCP
+from mcp_http_security import apply_mcp_http_security
 
 # MnT Monitoring API paths — see monitoring-open-api.yaml (server: https://{server}/admin/API/mnt)
 MNT_PATH_SESSION_ACTIVE_LIST = "Session/ActiveList"
@@ -758,4 +759,5 @@ if __name__ == "__main__":
         print("💡 Please check your ISE credentials, host connectivity, and ERS API status")
         sys.exit(1)
 
+    mcp_host = apply_mcp_http_security(mcp, mcp_host)
     mcp.run(transport="http", host=mcp_host, port=mcp_port)

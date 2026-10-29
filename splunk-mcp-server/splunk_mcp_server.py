@@ -41,6 +41,7 @@ from pathlib import Path
 from typing import Any
 
 from fastmcp import FastMCP
+from mcp_http_security import apply_mcp_http_security
 from fastmcp.server.lifespan import lifespan
 
 # Configure logging
@@ -108,7 +109,7 @@ splunk_verify_ssl = os.getenv("SPLUNK_VERIFY_SSL", "false").lower() == "true"
 
 # Get MCP server configuration
 mcp_port = int(os.getenv("MCP_PORT", "8006"))
-mcp_host = os.getenv("MCP_HOST", "0.0.0.0")
+mcp_host = os.getenv("MCP_HOST", "127.0.0.1")
 
 # Validate required configuration
 if not splunk_mcp_url and not splunk_host:
@@ -367,4 +368,5 @@ if __name__ == "__main__":
     logger.info(f"🔑 SSL Verification: {splunk_verify_ssl}")
     logger.info("🛠️  Tools: discovered at startup (Splunk tools/list)")
 
+    mcp_host = apply_mcp_http_security(mcp, mcp_host)
     mcp.run(transport="streamable-http", host=mcp_host, port=mcp_port)

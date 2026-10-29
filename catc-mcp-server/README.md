@@ -79,6 +79,7 @@ CATC_PASSWORD=your_catalyst_center_password   # Catalyst Center password
 # MCP Server Configuration (Optional)
 MCP_HOST=localhost                            # Host for MCP server (default: localhost)
 MCP_PORT=8002                                # Port for MCP server (default: 8002)
+CATC_ENABLE_WRITES=false                      # Set true to register resolve_issues
 ```
 
 ### Catalyst Center Prerequisites
@@ -104,6 +105,8 @@ MCP_PORT=8002                                # Port for MCP server (default: 800
 | `CATC_PASSWORD` | Catalyst Center password | - | ✅ Yes |
 | `MCP_HOST` | Host for MCP server | `localhost` | No |
 | `MCP_PORT` | Port for MCP server | `8002` | No |
+| `CATC_ENABLE_WRITES` | Register resolve_issues | `false` | No |
+| `MCP_API_TOKEN` | Bearer token; required when bind is not loopback | (empty) | When exposed |
 
 ### Catalyst Center Prerequisites
 

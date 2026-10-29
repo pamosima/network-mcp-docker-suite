@@ -6,8 +6,8 @@ Read-only access for network troubleshooting.
 
 Environment Variables:
     CLICKHOUSE_URL: ClickHouse HTTP interface URL (default: http://localhost:8123)
-    CLICKHOUSE_USER: ClickHouse username (optional)
-    CLICKHOUSE_PASSWORD: ClickHouse password (optional)
+    CLICKHOUSE_USER: Dedicated read-only username (default: mcp_readonly)
+    CLICKHOUSE_PASSWORD: Password for that user (required unless the user has no password)
     CLICKHOUSE_DATABASE: Default database (default: default)
 """
 
@@ -17,23 +17,31 @@ from typing import Any, Dict, Optional, List
 
 import httpx
 from fastmcp import FastMCP
+from mcp_http_security import apply_mcp_http_security
 
 # Configuration from environment
 CLICKHOUSE_URL = os.getenv("CLICKHOUSE_URL", "http://localhost:8123")
-CLICKHOUSE_USER = os.getenv("CLICKHOUSE_USER", "")
+CLICKHOUSE_USER = os.getenv("CLICKHOUSE_USER", "mcp_readonly")
 CLICKHOUSE_PASSWORD = os.getenv("CLICKHOUSE_PASSWORD", "")
 CLICKHOUSE_DATABASE = os.getenv("CLICKHOUSE_DATABASE", "default")
-MCP_HOST = os.getenv("MCP_HOST", "0.0.0.0")
+MCP_HOST = os.getenv("MCP_HOST", "127.0.0.1")
 MCP_PORT = int(os.getenv("MCP_PORT", "8008"))
+_IDENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
-# SQL validation patterns
-FORBIDDEN_KEYWORDS = re.compile(
-    r'\b(INSERT|UPDATE|DELETE|DROP|TRUNCATE|ALTER|CREATE|GRANT|REVOKE|ATTACH|DETACH|RENAME|OPTIMIZE|KILL)\b',
-    re.IGNORECASE
-)
 
-# Allowed tables for query_clickhouse (security allowlist)
-ALLOWED_TABLES = {"syslog", "default.syslog"}
+def _syslog_table() -> str:
+    if not _IDENT.match(CLICKHOUSE_DATABASE):
+        raise RuntimeError("CLICKHOUSE_DATABASE must be a simple SQL identifier")
+    return f"{CLICKHOUSE_DATABASE}.syslog"
+
+
+def _require_readonly_identity() -> None:
+    user = (CLICKHOUSE_USER or "").strip()
+    if not user or user == "default":
+        raise RuntimeError(
+            "CLICKHOUSE_USER must be a dedicated read-only account, not the empty/default "
+            "superuser. Provision mcp_readonly (see clickhouse/users.d/mcp-readonly.xml)."
+        )
 
 # Initialize FastMCP server
 mcp = FastMCP(
@@ -44,10 +52,10 @@ This server provides read-only access to ClickHouse for querying syslog data
 collected by gnp-stack from network devices.
 
 Available tools:
-- query_syslog: Query syslog messages with filters (recommended)
-- query_clickhouse: Execute custom SELECT queries (advanced)
+- query_syslog: Query syslog messages with filters
 - get_syslog_hosts: List hosts that have sent syslog messages
 - get_severity_stats: Get syslog message counts by severity
+- get_recent_errors: Recent error/critical syslog messages
 
 Syslog table schema (default.syslog):
 - timestamp: DateTime64(3) - Message timestamp
@@ -74,6 +82,9 @@ def _execute_query(sql: str, params: Optional[Dict[str, Any]] = None) -> Dict[st
             query_params["password"] = CLICKHOUSE_PASSWORD
         if CLICKHOUSE_DATABASE:
             query_params["database"] = CLICKHOUSE_DATABASE
+        if params:
+            for key, value in params.items():
+                query_params[f"param_{key}"] = value
         
         with httpx.Client(timeout=30.0) as client:
             response = client.post(
@@ -100,23 +111,6 @@ def _execute_query(sql: str, params: Optional[Dict[str, Any]] = None) -> Dict[st
         return {"success": False, "error": f"Request failed: {str(e)}"}
     except Exception as e:
         return {"success": False, "error": str(e)}
-
-
-def _validate_select_query(sql: str) -> Optional[str]:
-    """Validate that a query is a safe SELECT statement."""
-    # Check for forbidden keywords
-    if FORBIDDEN_KEYWORDS.search(sql):
-        return "Query contains forbidden SQL keywords. Only SELECT queries are allowed."
-    
-    # Must start with SELECT (after stripping whitespace)
-    if not sql.strip().upper().startswith("SELECT"):
-        return "Query must be a SELECT statement"
-    
-    # Check for multiple statements (basic check)
-    if ";" in sql.strip()[:-1]:  # Allow trailing semicolon
-        return "Multiple SQL statements are not allowed"
-    
-    return None
 
 
 def _format_syslog_rows(rows: List[Dict]) -> str:
@@ -165,47 +159,34 @@ def query_syslog(
     Returns:
         Syslog messages matching the filters
     """
-    # Sanitize limit
     limit = min(max(1, limit), 1000)
     since_minutes = max(1, since_minutes)
-    
-    # Build WHERE clauses with parameterized values
-    conditions = [f"timestamp >= now() - INTERVAL {since_minutes} MINUTE"]
-    
+    bind: Dict[str, Any] = {
+        "since_minutes": since_minutes,
+        "row_limit": limit,
+    }
+    conditions = ["timestamp >= now() - INTERVAL {since_minutes:UInt32} MINUTE"]
     if host:
-        # Escape single quotes in host
-        safe_host = host.replace("'", "\\'")
-        conditions.append(f"host ILIKE '%{safe_host}%'")
-    
+        bind["host"] = f"%{host}%"
+        conditions.append("host ILIKE {host:String}")
     if severity_filter:
-        safe_severity = severity_filter.replace("'", "\\'")
-        conditions.append(f"lower(severity) = lower('{safe_severity}')")
-    
+        bind["severity"] = severity_filter
+        conditions.append("lower(severity) = lower({severity:String})")
     if program_filter:
-        safe_program = program_filter.replace("'", "\\'")
-        conditions.append(f"program ILIKE '%{safe_program}%'")
-    
+        bind["program"] = f"%{program_filter}%"
+        conditions.append("program ILIKE {program:String}")
     if message_contains:
-        safe_message = message_contains.replace("'", "\\'")
-        conditions.append(f"message ILIKE '%{safe_message}%'")
-    
+        bind["message"] = f"%{message_contains}%"
+        conditions.append("message ILIKE {message:String}")
     where_clause = " AND ".join(conditions)
-    
     sql = f"""
-        SELECT 
-            timestamp,
-            host,
-            facility,
-            severity,
-            program,
-            message
-        FROM {CLICKHOUSE_DATABASE}.syslog
+        SELECT timestamp, host, facility, severity, program, message
+        FROM {_syslog_table()}
         WHERE {where_clause}
         ORDER BY timestamp DESC
-        LIMIT {limit}
+        LIMIT {{row_limit:UInt32}}
     """
-    
-    result = _execute_query(sql)
+    result = _execute_query(sql, bind)
     
     if not result["success"]:
         return result
@@ -226,39 +207,6 @@ def query_syslog(
 
 
 @mcp.tool()
-def query_clickhouse(sql: str) -> Dict[str, Any]:
-    """
-    Execute a custom SELECT query against ClickHouse.
-    
-    Args:
-        sql: SQL SELECT query (only SELECT statements allowed)
-    
-    Returns:
-        Query results as rows
-    
-    Security:
-        - Only SELECT queries are allowed
-        - INSERT, UPDATE, DELETE, DROP, and DDL statements are rejected
-    """
-    # Validate the query
-    error = _validate_select_query(sql)
-    if error:
-        return {"success": False, "error": error}
-    
-    result = _execute_query(sql)
-    
-    if not result["success"]:
-        return result
-    
-    return {
-        "success": True,
-        "count": result["count"],
-        "rows": result["rows"][:500],  # Limit rows returned
-        "truncated": result["count"] > 500
-    }
-
-
-@mcp.tool()
 def get_syslog_hosts(since_minutes: int = 60) -> Dict[str, Any]:
     """
     List hosts that have sent syslog messages.
@@ -270,20 +218,15 @@ def get_syslog_hosts(since_minutes: int = 60) -> Dict[str, Any]:
         List of hosts with message counts
     """
     since_minutes = max(1, since_minutes)
-    
     sql = f"""
-        SELECT 
-            host,
-            count() as message_count,
-            max(timestamp) as last_seen
-        FROM {CLICKHOUSE_DATABASE}.syslog
-        WHERE timestamp >= now() - INTERVAL {since_minutes} MINUTE
+        SELECT host, count() as message_count, max(timestamp) as last_seen
+        FROM {_syslog_table()}
+        WHERE timestamp >= now() - INTERVAL {{since_minutes:UInt32}} MINUTE
         GROUP BY host
         ORDER BY message_count DESC
         LIMIT 100
     """
-    
-    result = _execute_query(sql)
+    result = _execute_query(sql, {"since_minutes": since_minutes})
     
     if not result["success"]:
         return result
@@ -309,26 +252,20 @@ def get_severity_stats(host: Optional[str] = None, since_minutes: int = 60) -> D
         Message counts per severity level
     """
     since_minutes = max(1, since_minutes)
-    
-    conditions = [f"timestamp >= now() - INTERVAL {since_minutes} MINUTE"]
-    
+    bind: Dict[str, Any] = {"since_minutes": since_minutes}
+    conditions = ["timestamp >= now() - INTERVAL {since_minutes:UInt32} MINUTE"]
     if host:
-        safe_host = host.replace("'", "\\'")
-        conditions.append(f"host ILIKE '%{safe_host}%'")
-    
+        bind["host"] = f"%{host}%"
+        conditions.append("host ILIKE {host:String}")
     where_clause = " AND ".join(conditions)
-    
     sql = f"""
-        SELECT 
-            severity,
-            count() as count
-        FROM {CLICKHOUSE_DATABASE}.syslog
+        SELECT severity, count() as count
+        FROM {_syslog_table()}
         WHERE {where_clause}
         GROUP BY severity
         ORDER BY count DESC
     """
-    
-    result = _execute_query(sql)
+    result = _execute_query(sql, bind)
     
     if not result["success"]:
         return result
@@ -364,33 +301,23 @@ def get_recent_errors(
     """
     since_minutes = max(1, since_minutes)
     limit = min(max(1, limit), 500)
-    
+    bind: Dict[str, Any] = {"since_minutes": since_minutes, "row_limit": limit}
     conditions = [
-        f"timestamp >= now() - INTERVAL {since_minutes} MINUTE",
-        "lower(severity) IN ('error', 'err', 'critical', 'crit', 'alert', 'emerg')"
+        "timestamp >= now() - INTERVAL {since_minutes:UInt32} MINUTE",
+        "lower(severity) IN ('error', 'err', 'critical', 'crit', 'alert', 'emerg')",
     ]
-    
     if host:
-        safe_host = host.replace("'", "\\'")
-        conditions.append(f"host ILIKE '%{safe_host}%'")
-    
+        bind["host"] = f"%{host}%"
+        conditions.append("host ILIKE {host:String}")
     where_clause = " AND ".join(conditions)
-    
     sql = f"""
-        SELECT 
-            timestamp,
-            host,
-            facility,
-            severity,
-            program,
-            message
-        FROM {CLICKHOUSE_DATABASE}.syslog
+        SELECT timestamp, host, facility, severity, program, message
+        FROM {_syslog_table()}
         WHERE {where_clause}
         ORDER BY timestamp DESC
-        LIMIT {limit}
+        LIMIT {{row_limit:UInt32}}
     """
-    
-    result = _execute_query(sql)
+    result = _execute_query(sql, bind)
     
     if not result["success"]:
         return result
@@ -406,16 +333,18 @@ def get_recent_errors(
 
 
 if __name__ == "__main__":
+    _require_readonly_identity()
     print(f"🚀 Starting ClickHouse MCP Server")
     print(f"🗄️  ClickHouse URL: {CLICKHOUSE_URL}")
+    print(f"👤 ClickHouse user: {CLICKHOUSE_USER}")
     print(f"📁 Database: {CLICKHOUSE_DATABASE}")
     print(f"🔌 Listening on: {MCP_HOST}:{MCP_PORT}")
     print(f"")
     print(f"📋 Available tools:")
     print(f"   - query_syslog: Query syslog with filters")
-    print(f"   - query_clickhouse: Execute custom SELECT queries")
     print(f"   - get_syslog_hosts: List hosts sending syslog")
     print(f"   - get_severity_stats: Message counts by severity")
     print(f"   - get_recent_errors: Get recent error messages")
     
-    mcp.run(transport="streamable-http", host=MCP_HOST, port=MCP_PORT)
+    host = apply_mcp_http_security(mcp, MCP_HOST)
+    mcp.run(transport="streamable-http", host=host, port=MCP_PORT)

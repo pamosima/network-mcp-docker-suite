@@ -19,7 +19,7 @@ COPY pyproject.toml ./
 RUN uv sync
 
 # Copy application code
-COPY splunk_mcp_server.py ./
+COPY splunk_mcp_server.py mcp_http_security.py ./
 
 # Create non-root user for security
 RUN useradd --create-home --shell /bin/bash app && \

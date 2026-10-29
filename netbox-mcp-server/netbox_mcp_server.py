@@ -31,6 +31,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 import requests
 from fastmcp import FastMCP
+from mcp_http_security import apply_mcp_http_security, env_flag, register_mutating_tool
 
 # ---- Environment Variables ----
 def load_dotenv_file(env_file: str = ".env") -> bool:
@@ -221,6 +222,8 @@ print("[DEBUG] Creating comprehensive NetBox MCP server...")
 
 # Create MCP server instance early
 mcp = FastMCP("NetBox API Server")
+NETBOX_ENABLE_WRITES = env_flag("NETBOX_ENABLE_WRITES", False)
+mutating_tool = register_mutating_tool(mcp, NETBOX_ENABLE_WRITES)
 
 # ---- DCIM Tools ----
 @mcp.tool()
@@ -242,7 +245,7 @@ def get_site_by_id(site_id: int) -> Dict[str, Any]:
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-@mcp.tool()
+@mutating_tool
 def create_site(name: str, slug: str, status: str = "active", description: str = "") -> Dict[str, Any]:
     """Create a new site in NetBox."""
     try:
@@ -277,7 +280,7 @@ def get_device_by_id(device_id: int) -> Dict[str, Any]:
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-@mcp.tool()
+@mutating_tool
 def create_device(name: str, device_type_id: int, site_id: int, role_id: int, status: str = "active", location_id: Optional[int] = None, serial: Optional[str] = None) -> Dict[str, Any]:
     """Create a new device in NetBox."""
     try:
@@ -330,7 +333,7 @@ def get_ip_addresses(limit: int = 50, vrf_id: Optional[int] = None, params: Opti
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-@mcp.tool()
+@mutating_tool
 def create_ip_address(address: str, status: str = "active", description: str = "") -> Dict[str, Any]:
     """Create a new IP address in NetBox."""
     try:
@@ -377,7 +380,7 @@ def search_objects(endpoint: str, query: str, limit: int = 25) -> Dict[str, Any]
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-@mcp.tool()
+@mutating_tool
 def update_object(endpoint: str, object_id: int, data: Dict[str, Any]) -> Dict[str, Any]:
     """Update an existing object in NetBox."""
     try:
@@ -385,7 +388,7 @@ def update_object(endpoint: str, object_id: int, data: Dict[str, Any]) -> Dict[s
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-@mcp.tool()
+@mutating_tool
 def delete_object(endpoint: str, object_id: int) -> Dict[str, Any]:
     """Delete an object from NetBox."""
     try:
@@ -797,8 +800,11 @@ if __name__ == "__main__":
     print(f"🚀 NetBox MCP Server starting...")
     print(f"🔗 NetBox URL: {netbox_url}")
     
-    # Register custom scripts as dynamic tools
-    dynamic_tools_count = register_custom_scripts_as_tools()
+    dynamic_tools_count = 0
+    if NETBOX_ENABLE_WRITES:
+        dynamic_tools_count = register_custom_scripts_as_tools()
+    else:
+        print("🔒 NETBOX_ENABLE_WRITES is false: create/update/delete and custom scripts are not registered")
     
     # Calculate total tools (17 base tools + dynamic custom script tools)
     # Base tools: 8 DCIM + 4 IPAM + 4 Search/CRUD + 3 Script Utilities = 19 base tools
@@ -816,6 +822,7 @@ if __name__ == "__main__":
     print(f"   ✏️  CRUD: Create, Read, Update, Delete operations")
     print(f"   🔧 Custom Scripts: {dynamic_tools_count} dynamically registered + 3 utility tools")
     
+    mcp_host = apply_mcp_http_security(mcp, mcp_host)
     # Start the MCP server in HTTP mode
     try:
         mcp.run(transport="http", host=mcp_host, port=mcp_port)

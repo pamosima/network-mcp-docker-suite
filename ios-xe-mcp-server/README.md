@@ -26,14 +26,14 @@ For monitoring and troubleshooting workflows, you can enable **read-only mode** 
 
 ```bash
 # In .env
-IOS_XE_READ_ONLY=true    # Only show commands available (recommended for AI troubleshooting)
-IOS_XE_READ_ONLY=false   # Both show and config commands (default)
+IOS_XE_READ_ONLY=true    # Only show commands available (default)
+IOS_XE_READ_ONLY=false   # Both show and config commands (explicit opt-in)
 ```
 
 | Mode | `IOS_XE_READ_ONLY` | Available Tools |
 |------|---------------------|-----------------|
-| **Read-Only** | `true` | `show_command` only |
-| **Read-Write** | `false` (default) | `show_command` + `config_command` |
+| **Read-Only** | `true` (default) | `show_command` only |
+| **Read-Write** | `false` | `show_command` + `config_command` |
 
 **Use Cases:**
 - **netops-stack troubleshooting:** Set `IOS_XE_READ_ONLY=true` - AI can only run show commands
@@ -137,7 +137,7 @@ nano .env
 
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
-| `MCP_HOST` | Server bind address | `0.0.0.0` | No |
+| `MCP_HOST` | Server bind address | `127.0.0.1` | No |
 | `MCP_PORT` | Server port | `8003` | No |
 | `LOG_LEVEL` | Logging level | `INFO` | No |
 
@@ -153,7 +153,7 @@ nano .env
 | Variable | Description | Example | Notes |
 |----------|-------------|---------|-------|
 | `IOS_XE_ENABLE_SECRET` | Enable secret for priv 15 | `enable_password` | Leave empty if login is already priv 15 |
-| `IOS_XE_READ_ONLY` | Read-only mode | `true` / `false` | `true` = show commands only (default: `false`) |
+| `IOS_XE_READ_ONLY` | Read-only mode | `true` / `false` | `true` = show commands only (default: `true`) |
 | `SSH_TIMEOUT` | SSH connection timeout | `60` | Seconds |
 | `DEFAULT_DEVICE_TYPE` | Netmiko device type | `cisco_ios` | Usually `cisco_ios` for IOS XE |
 
@@ -171,10 +171,10 @@ IOS_XE_PASSWORD=your_default_password
 IOS_XE_ENABLE_SECRET=      # Leave empty if login is already priv 15
 
 # Read-Only Mode (recommended for monitoring/troubleshooting)
-IOS_XE_READ_ONLY=false    # Set to 'true' for show commands only
+IOS_XE_READ_ONLY=true     # Set to 'false' to enable config_command
 
 # Optional: Server configuration  
-MCP_HOST=0.0.0.0
+MCP_HOST=127.0.0.1
 MCP_PORT=8003
 LOG_LEVEL=INFO
 ```
@@ -385,7 +385,7 @@ Send configuration commands to an IOS XE device.
 
 **🔐 SECURITY:** Credentials are loaded from environment variables only. No password parameters accepted.
 
-**⚠️ AVAILABILITY:** Only available when `IOS_XE_READ_ONLY=false` (default). Not registered in read-only mode.
+**⚠️ AVAILABILITY:** Only available when `IOS_XE_READ_ONLY=false`. Not registered in read-only mode (the default).
 
 **Parameters:**
 - `commands` (list): List of configuration commands to send

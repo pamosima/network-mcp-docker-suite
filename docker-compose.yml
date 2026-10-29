@@ -1,3 +1,7 @@
+# Host ports are published on loopback only (127.0.0.1:PORT:PORT).
+# MCP_HOST=0.0.0.0 is the in-container bind so Docker port mapping works.
+# That bind is not loopback, so MCP_API_TOKEN is required (fail-closed).
+# Publishing on 0.0.0.0 is an explicit operator choice and still needs the token.
 services:
   meraki-mcp-servers:
     build:
@@ -16,7 +20,7 @@ services:
       
     # Port mapping: host:container
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     
     # Volume mounts (optional)
     volumes:
@@ -61,7 +65,7 @@ services:
       
     # Port mapping: host:container
     ports:
-      - "8001:8001"
+      - "127.0.0.1:8001:8001"
     
     # Security options
     security_opt:
@@ -101,7 +105,7 @@ services:
       
     # Port mapping: host:container
     ports:
-      - "8002:8002"
+      - "127.0.0.1:8002:8002"
     
     # Security options
     security_opt:
@@ -142,7 +146,7 @@ services:
       
     # Port mapping: host:container
     ports:
-      - "8003:8003"
+      - "127.0.0.1:8003:8003"
     
     # Security options
     security_opt:
@@ -182,7 +186,7 @@ services:
       
     # Port mapping: host:container
     ports:
-      - "8004:8004"
+      - "127.0.0.1:8004:8004"
     
     # Security options
     security_opt:
@@ -222,7 +226,7 @@ services:
       
     # Port mapping: host:container
     ports:
-      - "8005:8005"
+      - "127.0.0.1:8005:8005"
     
     # Security options
     security_opt:
@@ -267,7 +271,7 @@ services:
 
     # Port mapping: host:container
     ports:
-      - "8006:8006"
+      - "127.0.0.1:8006:8006"
     
     # Security options
     security_opt:
@@ -308,7 +312,7 @@ services:
       
     # Port mapping: host:container
     ports:
-      - "8007:8007"
+      - "127.0.0.1:8007:8007"
     
     # Security options
     security_opt:
@@ -349,7 +353,7 @@ services:
       
     # Port mapping: host:container
     ports:
-      - "8008:8008"
+      - "127.0.0.1:8008:8008"
     
     # Security options
     security_opt:
@@ -390,7 +394,7 @@ services:
       
     # Port mapping: host:container
     ports:
-      - "8009:8009"
+      - "127.0.0.1:8009:8009"
     
     # Security options
     security_opt:

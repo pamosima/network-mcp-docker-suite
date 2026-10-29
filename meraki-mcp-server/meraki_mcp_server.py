@@ -32,6 +32,7 @@ import logging
 import jsonschema
 from pathlib import Path
 from fastmcp import FastMCP
+from mcp_http_security import apply_mcp_http_security
 
 # Configure logging
 logging.basicConfig(
@@ -541,7 +542,7 @@ openapi_spec = fix_null_value_schemas(openapi_spec)
 
 # ---- Role Selection Logic ----
 # Determine which route configuration to use based on MCP_ROLE environment variable
-role = os.getenv("MCP_ROLE", "noc").lower()  # Default to "noc" if not set
+role = os.getenv("MCP_ROLE", "sysadmin").lower()  # Default read-only; noc/all are write opt-in
 
 if role == "sysadmin":
     selected_routes = sysadmin_routes
@@ -608,6 +609,7 @@ if __name__ == "__main__":
     print(f"🔗 HTTP endpoint: http://{mcp_host}:{mcp_port}")
     print(f"✅ Server ready for MCP client connections via HTTP.")
     
+    mcp_host = apply_mcp_http_security(mcp, mcp_host)
     # Start the MCP server in HTTP mode
     try:
         mcp.run(transport="http", host=mcp_host, port=mcp_port)
