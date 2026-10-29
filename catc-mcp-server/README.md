@@ -103,6 +103,7 @@ CATC_ENABLE_WRITES=false                      # Set true to register resolve_iss
 | `CATC_URL` | Catalyst Center URL (include https://) | - | ✅ Yes |
 | `CATC_USERNAME` | Catalyst Center username | - | ✅ Yes |
 | `CATC_PASSWORD` | Catalyst Center password | - | ✅ Yes |
+| `CATC_VERIFY_SSL` | Verify TLS certificates | `true` | No |
 | `MCP_HOST` | Host for MCP server | `localhost` | No |
 | `MCP_PORT` | Port for MCP server | `8002` | No |
 | `CATC_ENABLE_WRITES` | Register resolve_issues | `false` | No |
@@ -377,8 +378,8 @@ docker ps | grep catc-mcp-server
 # Test SSL connectivity  
 openssl s_client -connect catalyst-center.example.com:443
 
-# For self-signed certificates in corporate environments,
-# check container logs for SSL verification errors
+# Lab/self-signed only — TLS verification is on by default:
+# CATC_VERIFY_SSL=false
 ```
 
 **Permission Issues:**
