@@ -146,10 +146,10 @@ The suite provides direct access to seven containerized MCP servers, perfect for
 └─────────────────┘    └──────────────────────────────────┘
         
         Direct HTTP Connections
-        ✅ Simple setup - no authentication required
+        ✅ Host ports published on 127.0.0.1 by default
+        ✅ MCP_API_TOKEN required for non-loopback binds (Docker)
+        ✅ Mutating tools opt-in (read-only defaults)
         ✅ Individual server access and configuration
-        ✅ Flexible port-based deployment
-        ✅ Perfect for development and testing
 ```
 
 ### 🎯 Key Architecture Features
@@ -187,9 +187,13 @@ cd network-mcp-docker-suite
 # 2. Configure environment variables (single .env file for all servers)
 cp .env.example .env          # Copy the environment template
 nano .env                     # Edit and configure:
+                             # - Set MCP_API_TOKEN (required for Docker; bind is 0.0.0.0 in-container)
                              # - Set ENABLE_*_MCP=false for servers you don't want to use
                              # - Add API keys and credentials for enabled servers
 # See .env.example for detailed configuration instructions
+#
+# Breaking defaults (v1.5.0): loopback host publish, token for non-loopback,
+# read-only write paths, ClickHouse mcp_readonly + parameterized queries.
 
 # 3. Deploy servers
 ./deploy.sh start all          # All servers
@@ -339,7 +343,17 @@ The AI assistant automatically uses both MCP servers working together:
 
 ### Cursor IDE Configuration
 
-Create or update `~/.cursor/mcp.json`:
+Create or update `~/.cursor/mcp.json`.
+
+When `MCP_API_TOKEN` is set (required for Docker Compose), add the same header to every server:
+
+```json
+"headers": {
+  "Authorization": "Bearer change-me-if-exposed"
+}
+```
+
+Loopback-only native Python processes may omit the header. Docker always needs it.
 
 ```json
 {
@@ -400,7 +414,12 @@ Create or update `~/.cursor/mcp.json`:
 
 ### LibreChat Configuration  
 
-Add to your `librechat.yaml`:
+Add to your `librechat.yaml`. For Docker, set `MCP_API_TOKEN` and add to each server:
+
+```yaml
+    headers:
+      Authorization: "Bearer ${MCP_API_TOKEN}"
+```
 
 ```yaml
 mcpServers:
@@ -491,20 +510,31 @@ curl http://localhost:8009/mcp    # GitLab
 
 ## 🔒 Security Considerations
 
+**Breaking defaults in v1.5.0** ([GHSA-5rxh-p2hm-g7gr](https://github.com/pamosima/network-mcp-docker-suite/security/advisories/GHSA-5rxh-p2hm-g7gr)):
+
+- Compose publishes `127.0.0.1:<port>:<port>` (not all interfaces)
+- Native `MCP_HOST` defaults to loopback (`127.0.0.1` / `localhost`)
+- Non-loopback binds (including Docker's in-container `0.0.0.0`) refuse to start unless `MCP_API_TOKEN` is set
+- Clients send `Authorization: Bearer <token>`
+- Device/config, NetBox, Catalyst Center, GitLab, and Meraki write paths are opt-in
+- ClickHouse uses parameterized syslog templates and a dedicated `mcp_readonly` user
+
 ### Container Security
 - ✅ Runs as non-root user
 - ✅ Security options enabled (`no-new-privileges`)
 - ✅ Resource limits configured
 - ✅ Network isolation via Docker networks
+- ✅ Host ports bound to loopback by default
 
 ### Production Security
-- 🔒 API keys loaded from environment variables only
+- 🔒 API keys and `MCP_API_TOKEN` loaded from environment variables only
 - 🔒 Network isolation via Docker networks
 - 🔒 Role-based access control (where supported)
+- 🔒 Mutating MCP tools unregistered until explicitly enabled
 
 For production deployments, consider:
 1. **Secrets Management**: Use Docker secrets or external secret managers
-2. **Network Security**: Implement proper firewall rules and network segmentation
+2. **Network Security**: Keep host publish on loopback, or set `MCP_API_TOKEN` and firewall remote exposure
 3. **Monitoring**: Set up comprehensive logging and monitoring
 4. **Updates**: Regular security updates and vulnerability scanning
 

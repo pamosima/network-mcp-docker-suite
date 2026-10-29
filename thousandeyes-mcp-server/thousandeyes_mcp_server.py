@@ -29,6 +29,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 import requests
 from fastmcp import FastMCP
+from mcp_http_security import apply_mcp_http_security
 
 # ---- Environment Variables ----
 def load_dotenv_file(env_file: str = ".env") -> bool:
@@ -375,4 +376,5 @@ if __name__ == "__main__":
         sys.exit(1)
     
     # Start the MCP server
+    mcp_host = apply_mcp_http_security(mcp, mcp_host)
     mcp.run(transport="http", host=mcp_host, port=mcp_port)

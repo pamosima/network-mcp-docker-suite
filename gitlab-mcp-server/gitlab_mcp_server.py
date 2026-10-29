@@ -21,13 +21,15 @@ from collections import defaultdict
 
 import httpx
 from fastmcp import FastMCP
+from mcp_http_security import apply_mcp_http_security, env_flag, register_mutating_tool
 
 # Configuration from environment
 GITLAB_URL = os.getenv("GITLAB_URL", "https://gitlab.com").rstrip("/")
 GITLAB_TOKEN = os.getenv("GITLAB_TOKEN", "")
 GITLAB_DEFAULT_PROJECT_ID = os.getenv("GITLAB_DEFAULT_PROJECT_ID", "")
-MCP_HOST = os.getenv("MCP_HOST", "0.0.0.0")
+MCP_HOST = os.getenv("MCP_HOST", "127.0.0.1")
 MCP_PORT = int(os.getenv("MCP_PORT", "8009"))
+GITLAB_ENABLE_WRITES = env_flag("GITLAB_ENABLE_WRITES", False)
 
 # Security: Allowed pipeline variables
 DEFAULT_ALLOWED_VARIABLES = [
@@ -91,6 +93,7 @@ Security:
 - Rate limiting applied to prevent abuse
 """
 )
+mutating_tool = register_mutating_tool(mcp, GITLAB_ENABLE_WRITES)
 
 
 def _check_rate_limit(operation: str, limit: int) -> Optional[str]:
@@ -189,7 +192,7 @@ def _encode_path(path: str) -> str:
     return path.replace("/", "%2F").replace(".", "%2E")
 
 
-@mcp.tool()
+@mutating_tool
 def trigger_gitlab_pipeline(
     project_id: Optional[str] = None,
     ref: str = "main",
@@ -509,7 +512,7 @@ def list_gitlab_pipelines(
     }
 
 
-@mcp.tool()
+@mutating_tool
 def play_gitlab_job(
     project_id: Optional[str] = None,
     job_id: int = 0
@@ -615,7 +618,7 @@ def get_gitlab_repository_file(
     }
 
 
-@mcp.tool()
+@mutating_tool
 def update_gitlab_repository_file(
     project_id: Optional[str] = None,
     file_path: str = "",
@@ -732,5 +735,7 @@ if __name__ == "__main__":
     print(f"🔒 Security:")
     print(f"   Allowed variables: {GITLAB_ALLOWED_VARIABLES}")
     print(f"   Allowed file paths: {GITLAB_ALLOWED_FILE_PATHS}")
+    print(f"   Writes enabled: {GITLAB_ENABLE_WRITES}")
     
-    mcp.run(transport="streamable-http", host=MCP_HOST, port=MCP_PORT)
+    host = apply_mcp_http_security(mcp, MCP_HOST)
+    mcp.run(transport="streamable-http", host=host, port=MCP_PORT)

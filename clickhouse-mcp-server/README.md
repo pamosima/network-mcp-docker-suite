@@ -7,18 +7,23 @@ A FastMCP server that provides read-only access to ClickHouse for querying syslo
 - **Syslog Queries**: Query syslog messages with flexible filters
 - **Host Discovery**: List devices that have sent syslog messages
 - **Severity Analysis**: Get message counts by severity level
-- **Custom Queries**: Execute custom SELECT queries (with security validation)
+- **Recent Errors**: Fetch recent error/critical messages
+
+Raw SQL is not accepted. Tools use fixed query templates with ClickHouse HTTP bound parameters (`param_*`).
 
 ## Configuration
 
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `CLICKHOUSE_URL` | ClickHouse HTTP interface URL | `http://localhost:8123` |
-| `CLICKHOUSE_USER` | ClickHouse username (if required) | (empty) |
-| `CLICKHOUSE_PASSWORD` | ClickHouse password (if required) | (empty) |
-| `CLICKHOUSE_DATABASE` | Default database | `default` |
-| `MCP_HOST` | Server bind address | `0.0.0.0` |
+| `CLICKHOUSE_USER` | Dedicated read-only username | `mcp_readonly` |
+| `CLICKHOUSE_PASSWORD` | Password for that user | (empty) |
+| `CLICKHOUSE_DATABASE` | Default database (must be a simple identifier) | `default` |
+| `MCP_HOST` | Server bind address | `127.0.0.1` |
 | `MCP_PORT` | Server port | `8008` |
+| `MCP_API_TOKEN` | Bearer token; required when `MCP_HOST` is not loopback | (empty) |
+
+The process refuses to start if `CLICKHOUSE_USER` is empty or `default`. Provision `mcp_readonly` from [`clickhouse/users.d/mcp-readonly.xml`](../clickhouse/users.d/mcp-readonly.xml): readonly profile, DDL disabled, `GRANT SELECT` on `default.syslog` only. Do not grant FILE, URL, S3, Remote, MySQL, PostgreSQL, JDBC, or ODBC table functions.
 
 ## Syslog Table Schema
 
@@ -41,7 +46,7 @@ ORDER BY (timestamp, host)
 ## Tools
 
 ### `query_syslog`
-Query syslog messages with filters (recommended for most use cases).
+Query syslog messages with filters.
 
 **Parameters:**
 - `host` (string, optional): Filter by device hostname or IP (partial match)
@@ -54,21 +59,6 @@ Query syslog messages with filters (recommended for most use cases).
 **Example:**
 ```
 query_syslog(host="core-01", since_minutes=30, severity_filter="error")
-```
-
-### `query_clickhouse`
-Execute a custom SELECT query against ClickHouse.
-
-**Parameters:**
-- `sql` (string, required): SQL SELECT query
-
-**Security:**
-- Only SELECT queries are allowed
-- INSERT, UPDATE, DELETE, DROP, and DDL statements are rejected
-
-**Example:**
-```
-query_clickhouse(sql="SELECT host, count() FROM syslog GROUP BY host ORDER BY count() DESC LIMIT 10")
 ```
 
 ### `get_syslog_hosts`
@@ -94,16 +84,15 @@ Get recent error and critical syslog messages.
 
 ## Security
 
-- Read-only access only (SELECT statements only)
-- Dangerous SQL keywords are blocked (INSERT, UPDATE, DELETE, DROP, etc.)
-- Input values are escaped to prevent SQL injection
-- No authentication secrets exposed in tool parameters
+- Dedicated `mcp_readonly` identity (not the default superuser)
+- Allowlisted parameterized templates only; no `query_clickhouse` / raw SQL tool
+- Bind defaults to loopback; non-loopback requires `Authorization: Bearer <MCP_API_TOKEN>`
 
 ## Usage with gnp-stack
 
 When running alongside gnp-stack:
 - Docker network: `CLICKHOUSE_URL=http://clickhouse:8123`
-- External access: `CLICKHOUSE_URL=http://198.18.134.22:8123`
+- External access: `CLICKHOUSE_URL=http://<clickhouse-host>:8123`
 
 ## Example Troubleshooting Queries
 
@@ -117,13 +106,6 @@ query_syslog(since_minutes=5, limit=200)
 # Search for specific message content
 query_syslog(message_contains="interface down", since_minutes=30)
 
-# Custom query for top talkers
-query_clickhouse(sql="""
-    SELECT host, count() as msgs
-    FROM syslog
-    WHERE timestamp >= now() - INTERVAL 1 HOUR
-    GROUP BY host
-    ORDER BY msgs DESC
-    LIMIT 20
-""")
+# Top talkers in the window: use get_syslog_hosts
+get_syslog_hosts(since_minutes=60)
 ```

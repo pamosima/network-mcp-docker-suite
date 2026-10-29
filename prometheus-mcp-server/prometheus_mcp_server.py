@@ -14,10 +14,11 @@ from typing import Any, Dict, Optional
 
 import httpx
 from fastmcp import FastMCP
+from mcp_http_security import apply_mcp_http_security
 
 # Configuration from environment
 PROMETHEUS_URL = os.getenv("PROMETHEUS_URL", "http://localhost:9090")
-MCP_HOST = os.getenv("MCP_HOST", "0.0.0.0")
+MCP_HOST = os.getenv("MCP_HOST", "127.0.0.1")
 MCP_PORT = int(os.getenv("MCP_PORT", "8007"))
 
 # Dangerous patterns to reject (security)
@@ -362,4 +363,5 @@ if __name__ == "__main__":
     print(f"   - get_targets: List monitored targets")
     print(f"   - suggest_queries: Get suggested queries for a device")
     
-    mcp.run(transport="streamable-http", host=MCP_HOST, port=MCP_PORT)
+    host = apply_mcp_http_security(mcp, MCP_HOST)
+    mcp.run(transport="streamable-http", host=host, port=MCP_PORT)

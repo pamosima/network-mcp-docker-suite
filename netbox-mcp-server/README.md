@@ -149,6 +149,7 @@ NETBOX_TOKEN=your_netbox_token_here          # NetBox API token with appropriate
 # MCP Server Configuration (Optional)
 MCP_HOST=localhost                           # Host for MCP server (default: localhost)
 MCP_PORT=8001                               # Port for MCP server (default: 8001)
+NETBOX_ENABLE_WRITES=false                   # Set true to register create/update/delete and custom scripts
 ```
 
 ### Getting NetBox API Token
@@ -169,6 +170,8 @@ MCP_PORT=8001                               # Port for MCP server (default: 8001
 | `NETBOX_TOKEN` | NetBox API token | - | ✅ Yes |
 | `MCP_HOST` | Host for MCP server | `localhost` | No |
 | `MCP_PORT` | Port for MCP server | `8001` | No |
+| `NETBOX_ENABLE_WRITES` | Register mutating tools | `false` | No |
+| `MCP_API_TOKEN` | Bearer token; required when bind is not loopback | (empty) | When exposed |
 
 ### NetBox API Token
 

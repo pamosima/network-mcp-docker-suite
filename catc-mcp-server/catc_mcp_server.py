@@ -31,6 +31,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 import requests
 from fastmcp import FastMCP
+from mcp_http_security import apply_mcp_http_security, env_flag, register_mutating_tool
 
 # ---- Environment Variables ----
 def load_dotenv_file(env_file: str = ".env") -> bool:
@@ -177,6 +178,8 @@ catc_api = CatalystCenterAPI(CATC_URL, CATC_USERNAME, CATC_PASSWORD, verify_ssl=
 
 # Initialize FastMCP
 mcp = FastMCP("Catalyst Center MCP Server")
+CATC_ENABLE_WRITES = env_flag("CATC_ENABLE_WRITES", False)
+mutating_tool = register_mutating_tool(mcp, CATC_ENABLE_WRITES)
 
 @mcp.tool()
 def get_network_devices(hostname: Optional[str] = None, device_type: Optional[str] = None) -> Dict[str, Any]:
@@ -386,7 +389,7 @@ def get_assurance_issues(
         print(f"❌ API Error: {e}")
         raise
 
-@mcp.tool()
+@mutating_tool
 def resolve_issues(issue_ids: List[str]) -> Dict[str, Any]:
     """
     Resolve the given list of issues in Catalyst Center
@@ -480,5 +483,5 @@ if __name__ == "__main__":
         print("❌ Failed to authenticate with Catalyst Center")
         sys.exit(1)
     
-    # Start the MCP server
+    mcp_host = apply_mcp_http_security(mcp, mcp_host)
     mcp.run(transport="http", host=mcp_host, port=mcp_port)

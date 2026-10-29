@@ -1,0 +1,40 @@
+<!--
+  Dedicated ClickHouse identity for the MCP server.
+
+  Copy this file into your ClickHouse users.d directory (for example on
+  netops-stack) and set CLICKHOUSE_MCP_READONLY_PASSWORD there. Then set
+  this suite's CLICKHOUSE_USER=mcp_readonly and CLICKHOUSE_PASSWORD to the
+  same value.
+
+  Do not use the default superuser — especially with an empty password —
+  as the MCP identity. Grant SELECT on syslog only; do not grant FILE, URL,
+  S3, Remote, MySQL, PostgreSQL, JDBC, or ODBC table functions.
+-->
+<clickhouse>
+  <profiles>
+    <mcp_readonly>
+      <readonly>1</readonly>
+      <allow_ddl>0</allow_ddl>
+      <allow_introspection_functions>0</allow_introspection_functions>
+      <constraints>
+        <readonly>
+          <readonly>1</readonly>
+        </readonly>
+      </constraints>
+    </mcp_readonly>
+  </profiles>
+  <users>
+    <mcp_readonly>
+      <password from_env="CLICKHOUSE_MCP_READONLY_PASSWORD" />
+      <profile>mcp_readonly</profile>
+      <quota>default</quota>
+      <networks>
+        <ip>127.0.0.1</ip>
+        <ip>::1</ip>
+      </networks>
+      <grants>
+        <query>GRANT SELECT ON default.syslog</query>
+      </grants>
+    </mcp_readonly>
+  </users>
+</clickhouse>

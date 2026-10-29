@@ -20,7 +20,7 @@ Environment Variables:
 - IOS_XE_USERNAME: Required. Default IOS XE username for device access
 - IOS_XE_PASSWORD: Required. Default IOS XE password for device access
 - IOS_XE_ENABLE_SECRET: Optional. Enable secret for privilege escalation (if different from password)
-- IOS_XE_READ_ONLY: Optional. Set to 'true' for read-only mode (show commands only). Defaults to false.
+- IOS_XE_READ_ONLY: Optional. Set to 'false' to enable config commands. Defaults to true (show commands only).
 - MCP_HOST: Optional. Host for MCP server. Defaults to localhost  
 - MCP_PORT: Optional. Port for MCP server. Defaults to 8003
 
@@ -29,6 +29,7 @@ Based on: SSH device management concepts by tspuhler
 """
 
 from fastmcp import FastMCP
+from mcp_http_security import apply_mcp_http_security
 from netmiko import ConnectHandler
 import logging
 
@@ -54,7 +55,7 @@ if not DEFAULT_USERNAME or not DEFAULT_PASSWORD:
     raise ValueError("Missing required environment credentials")
 
 # Read-only mode configuration
-READ_ONLY_MODE = os.getenv("IOS_XE_READ_ONLY", "false").lower() in ("true", "1", "yes")
+READ_ONLY_MODE = os.getenv("IOS_XE_READ_ONLY", "true").lower() in ("true", "1", "yes")
 
 logger.info(f"Loaded credentials for user: {DEFAULT_USERNAME}")
 logger.info("Secure mode: Credentials loaded from environment only")
@@ -218,8 +219,9 @@ if __name__ == "__main__":
     import os
     
     # Get configuration from environment
-    mcp_host = os.getenv("MCP_HOST", "0.0.0.0")
+    mcp_host = os.getenv("MCP_HOST", "127.0.0.1")
     mcp_port = int(os.getenv("MCP_PORT", "8003"))
+    mcp_host = apply_mcp_http_security(mcp, mcp_host)
     
     mode_str = "READ-ONLY (show commands only)" if READ_ONLY_MODE else "READ-WRITE (config enabled)"
     enable_str = "Enable secret: configured" if ENABLE_SECRET else "Enable secret: not set (using priv 15 login)"

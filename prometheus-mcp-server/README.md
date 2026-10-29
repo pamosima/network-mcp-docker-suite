@@ -15,7 +15,7 @@ A FastMCP server that provides read-only access to Prometheus for querying netwo
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `PROMETHEUS_URL` | Prometheus server URL | `http://localhost:9090` |
-| `MCP_HOST` | Server bind address | `0.0.0.0` |
+| `MCP_HOST` | Server bind address | `127.0.0.1` |
 | `MCP_PORT` | Server port | `8007` |
 
 ## Tools

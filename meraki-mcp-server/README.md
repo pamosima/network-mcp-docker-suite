@@ -69,7 +69,7 @@ cp .env.example .env
 MERAKI_KEY=your_actual_meraki_api_key_here    # Get from Meraki Dashboard > Organization > API & webhooks
 
 # Access Control (Optional)  
-MCP_ROLE=noc                                   # Options: noc, sysadmin, all (default: noc)
+MCP_ROLE=sysadmin                              # Options: sysadmin (read-only, default), noc, all
 
 # MCP Server Configuration (Optional)
 MCP_HOST=localhost                             # Host for MCP server (default: localhost)
@@ -90,8 +90,9 @@ MERAKI_BASE_URL=https://api.meraki.com/api/v1 # Meraki API base URL (default: of
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
 | `MERAKI_KEY` | Meraki Dashboard API key | - | ✅ Yes |
-| `MCP_ROLE` | Access control role (noc/sysadmin/all) | `noc` | No |
+| `MCP_ROLE` | Access control role (sysadmin/noc/all) | `sysadmin` | No |
 | `MCP_HOST` | Host for MCP server | `localhost` | No |
+| `MCP_API_TOKEN` | Bearer token; required when bind is not loopback | (empty) | When exposed |
 | `MCP_PORT` | Port for MCP server | `8000` | No |
 | `MERAKI_BASE_URL` | Meraki API base URL | `https://api.meraki.com/api/v1` | No |
 
@@ -166,7 +167,7 @@ docker build -t meraki-mcp-server .
 # Run with environment file
 docker run -d --name meraki-mcp-server \
   --env-file .env \
-  -p 8000:8000 \
+  -p 127.0.0.1:8000:8000 \
   meraki-mcp-server
 ```
 
@@ -185,7 +186,7 @@ services:
       - MCP_HOST=0.0.0.0
       - MCP_PORT=8000
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     restart: unless-stopped
     networks:
       - default
