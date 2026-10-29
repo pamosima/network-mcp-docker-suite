@@ -11,7 +11,7 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "urllib3>=2.8.0",
     "anyio>=4.15.1",
-    "cryptography>=50.0.1",
+    "cryptography>=50.0.2",
     "mcp>=1.28.1",
-    "pyjwt>=2.15.0",
+    "pyjwt>=2.15.1",
 ]
