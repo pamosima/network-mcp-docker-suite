@@ -1,5 +1,5 @@
 # ThousandEyes MCP Server - Dockerfile
-FROM python:3.12-slim@sha256:7026274c107626d7e940e0e5d6730481a4600ae95d5ca7eb532dd4180313fea9
+FROM python:3.15-slim@sha256:65a65fc7b30b06cb6df4930fd4650697cb23f4c2698ab81fc87e4b031bc36928
 
 # Set working directory
 WORKDIR /app
