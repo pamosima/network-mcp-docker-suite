@@ -60,6 +60,12 @@ if not DEFAULT_USERNAME or not DEFAULT_PASSWORD:
 # Read-only mode configuration
 READ_ONLY_MODE = os.getenv("IOS_XE_READ_ONLY", "true").lower() in ("true", "1", "yes")
 
+# NX-OS hosts (NetBox platform=cisco-nxos) need netmiko's cisco_nxos driver.
+# Using cisco_ios against NX-OS connects+authenticates but fails prompt detection on
+# 'terminal length 0' -> ReadTimeout ~11.4s x 2 attempts = ~23s wasted per call
+# (measured 2026-11-17/18 on 10.200.0.6 ATL1-TOR-1). Comma-separated env list.
+NXOS_HOSTS = {h.strip() for h in os.getenv("IOS_XE_NXOS_HOSTS", "").split(",") if h.strip()}
+
 logger.info(f"Loaded credentials for user: {DEFAULT_USERNAME}")
 logger.info("Secure mode: Credentials loaded from environment only")
 if ENABLE_SECRET:
@@ -68,6 +74,8 @@ if READ_ONLY_MODE:
     logger.info("🔒 READ-ONLY MODE ENABLED: Only show commands are available")
 else:
     logger.info("⚠️  READ-WRITE MODE: Configuration commands are available")
+if NXOS_HOSTS:
+    logger.info(f"NX-OS hosts (cisco_nxos driver): {sorted(NXOS_HOSTS)}")
 
 # Password security utilities
 def sanitize_error_message(error_msg: str) -> str:
@@ -90,7 +98,7 @@ def mask_password(password: str) -> str:
 def create_safe_device_dict(host: str, username: str, password: str, secret: str = "") -> dict:
     """Create device connection dict with password and enable secret handling"""
     device = {
-        "device_type": "cisco_ios",
+        "device_type": "cisco_nxos" if host in NXOS_HOSTS else "cisco_ios",
         "host": host,
         "username": username,
         "password": password,
@@ -216,18 +224,19 @@ def show_command(command: str, host: str) -> str:
     if not host:
         return "Error: host parameter is required"
 
+    _t0 = time.perf_counter()
     try:
         # Log command execution with masked credentials
         log_connection_attempt(host, command)
 
         output = send_show_command(host, command)
-        logger.info(f"Successfully executed command on {host}")
+        logger.info(f"Completed on {host} in {int((time.perf_counter() - _t0) * 1000)}ms: {command}")
         return output
     except Exception as e:
         # Sanitize error message to remove any exposed passwords
         raw_error = f"Error executing command on {host}: {e}"
         safe_error = sanitize_error_message(raw_error)
-        logger.error(safe_error)
+        logger.error(f"Failed on {host} in {int((time.perf_counter() - _t0) * 1000)}ms: {command}: {safe_error}")
         
         # Return helpful error context without exposing credentials
         if "Authentication" in str(e) or "auth" in str(e).lower():
