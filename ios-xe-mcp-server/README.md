@@ -28,6 +28,7 @@ For monitoring and troubleshooting workflows, you can enable **read-only mode** 
 # In .env
 IOS_XE_READ_ONLY=true    # Only show commands available (default)
 IOS_XE_READ_ONLY=false   # Both show and config commands (explicit opt-in)
+IOS_XE_NXOS_HOSTS=10.0.0.1,10.0.0.2   # Nexus/NX-OS devices: connect with netmiko cisco_nxos (cisco_ios against NX-OS hangs ~23s/call)
 ```
 
 | Mode | `IOS_XE_READ_ONLY` | Available Tools |

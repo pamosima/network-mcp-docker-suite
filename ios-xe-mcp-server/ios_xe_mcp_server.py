@@ -31,7 +31,10 @@ Based on: SSH device management concepts by tspuhler
 from fastmcp import FastMCP
 from mcp_http_security import apply_mcp_http_security
 from netmiko import ConnectHandler
+from contextlib import contextmanager
 import logging
+import threading
+import time
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -57,6 +60,12 @@ if not DEFAULT_USERNAME or not DEFAULT_PASSWORD:
 # Read-only mode configuration
 READ_ONLY_MODE = os.getenv("IOS_XE_READ_ONLY", "true").lower() in ("true", "1", "yes")
 
+# NX-OS hosts (NetBox platform=cisco-nxos) need netmiko's cisco_nxos driver.
+# Using cisco_ios against NX-OS connects+authenticates but fails prompt detection on
+# 'terminal length 0' -> ReadTimeout ~11.4s x 2 attempts = ~23s wasted per call
+# (measured 2026-11-17/18 on 10.200.0.6 ATL1-TOR-1). Comma-separated env list.
+NXOS_HOSTS = {h.strip() for h in os.getenv("IOS_XE_NXOS_HOSTS", "").split(",") if h.strip()}
+
 logger.info(f"Loaded credentials for user: {DEFAULT_USERNAME}")
 logger.info("Secure mode: Credentials loaded from environment only")
 if ENABLE_SECRET:
@@ -65,6 +74,8 @@ if READ_ONLY_MODE:
     logger.info("🔒 READ-ONLY MODE ENABLED: Only show commands are available")
 else:
     logger.info("⚠️  READ-WRITE MODE: Configuration commands are available")
+if NXOS_HOSTS:
+    logger.info(f"NX-OS hosts (cisco_nxos driver): {sorted(NXOS_HOSTS)}")
 
 # Password security utilities
 def sanitize_error_message(error_msg: str) -> str:
@@ -87,7 +98,7 @@ def mask_password(password: str) -> str:
 def create_safe_device_dict(host: str, username: str, password: str, secret: str = "") -> dict:
     """Create device connection dict with password and enable secret handling"""
     device = {
-        "device_type": "cisco_ios",
+        "device_type": "cisco_nxos" if host in NXOS_HOSTS else "cisco_ios",
         "host": host,
         "username": username,
         "password": password,
@@ -98,6 +109,91 @@ def create_safe_device_dict(host: str, username: str, password: str, secret: str
     if secret:
         device["secret"] = secret
     return device
+
+# Connection pool: one SSH session per host, reused across tool calls.
+# Measured on IOS-XE switches: a fresh ConnectHandler per call costs ~1.3-3.0s
+# (handshake + enable + disconnect) versus ~0.15-0.8s for the command itself, so
+# pooling removes 56-90% of the latency of consecutive show commands on one device.
+POOL_MAX_IDLE = float(os.getenv("IOS_XE_POOL_MAX_IDLE", "300"))
+
+
+class _HostConnection:
+    """A pooled connection plus the lock that makes it safe for concurrent calls."""
+
+    __slots__ = ("conn", "lock", "last_used")
+
+    def __init__(self, conn):
+        self.conn = conn
+        self.lock = threading.Lock()
+        self.last_used = time.time()
+
+
+_pool: dict[str, _HostConnection] = {}
+_pool_lock = threading.Lock()
+
+
+def _open_connection(host: str):
+    """Open a new SSH session (entering enable mode when a secret is configured)."""
+    device = create_safe_device_dict(host, DEFAULT_USERNAME, DEFAULT_PASSWORD, ENABLE_SECRET)
+    conn = ConnectHandler(**device)
+    if ENABLE_SECRET:
+        conn.enable()
+    return conn
+
+
+def _close_entry(entry: _HostConnection) -> None:
+    try:
+        entry.conn.disconnect()
+    except Exception:  # already gone; nothing to close
+        pass
+
+
+def _get_entry(host: str) -> _HostConnection:
+    """Return the pooled entry for host, opening a session on first use or after idling out."""
+    with _pool_lock:
+        entry = _pool.get(host)
+        if entry is not None and (time.time() - entry.last_used) <= POOL_MAX_IDLE:
+            return entry
+        if entry is not None:
+            _close_entry(entry)
+        entry = _HostConnection(_open_connection(host))
+        _pool[host] = entry
+        return entry
+
+
+def drop_connection(host: str) -> None:
+    """Forget (and close) the pooled session for host."""
+    with _pool_lock:
+        entry = _pool.pop(host, None)
+    if entry is not None:
+        _close_entry(entry)
+
+
+@contextmanager
+def pooled_connection(host: str):
+    """Yield a live connection for host, serializing access per device."""
+    entry = _get_entry(host)
+    with entry.lock:
+        try:
+            yield entry.conn
+        except Exception:
+            drop_connection(host)
+            raise
+        else:
+            entry.last_used = time.time()
+
+
+def send_show_command(host: str, command: str) -> str:
+    """Run a show command on a pooled connection, reconnecting once if it went stale."""
+    last_error = None
+    for attempt in (1, 2):
+        try:
+            with pooled_connection(host) as conn:
+                return conn.send_command(command)
+        except Exception as exc:  # stale session, device reload, idle timeout
+            last_error = exc
+            logger.warning(f"Connection to {host} failed (attempt {attempt}/2): {exc}")
+    raise last_error
 
 def log_connection_attempt(host: str, command: str = None):
     """Safely log connection attempts without exposing passwords"""
@@ -127,26 +223,20 @@ def show_command(command: str, host: str) -> str:
     # Validate required parameters
     if not host:
         return "Error: host parameter is required"
-    
-    # Create device connection dictionary (with enable secret if configured)
-    device = create_safe_device_dict(host, DEFAULT_USERNAME, DEFAULT_PASSWORD, ENABLE_SECRET)
 
+    _t0 = time.perf_counter()
     try:
-        # Log connection attempt with masked password
+        # Log command execution with masked credentials
         log_connection_attempt(host, command)
-        
-        with ConnectHandler(**device) as conn:
-            # Enter enable mode if secret is configured and not already in privileged mode
-            if ENABLE_SECRET:
-                conn.enable()
-            output = conn.send_command(command)
-        logger.info(f"Successfully executed command on {host}")
+
+        output = send_show_command(host, command)
+        logger.info(f"Completed on {host} in {int((time.perf_counter() - _t0) * 1000)}ms: {command}")
         return output
     except Exception as e:
         # Sanitize error message to remove any exposed passwords
         raw_error = f"Error executing command on {host}: {e}"
         safe_error = sanitize_error_message(raw_error)
-        logger.error(safe_error)
+        logger.error(f"Failed on {host} in {int((time.perf_counter() - _t0) * 1000)}ms: {command}: {safe_error}")
         
         # Return helpful error context without exposing credentials
         if "Authentication" in str(e) or "auth" in str(e).lower():

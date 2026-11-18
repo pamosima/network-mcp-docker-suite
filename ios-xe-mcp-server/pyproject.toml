@@ -5,8 +5,12 @@ description = "IOS XE MCP server for LibreChat integration"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "fastmcp>=3.4.10,<4",
+    "fastmcp>=3.1.0",
     "netmiko>=4.3.0",
+    # Legacy Catalyst 2960X/3560X/1905 and N5K 5672UP only offer SHA-1 kex
+    # (diffie-hellman-group14-sha1/group-exchange-sha1) and ssh-rsa host keys;
+    # paramiko 5.x dropped both, so keep <4. Verified live 2026-11-18.
+    "paramiko>=3.5.1,<4",
     "uvicorn>=0.35.0",
     "python-dotenv>=1.0.0",
     "anyio>=4.15.1",
